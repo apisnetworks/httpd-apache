@@ -1,0 +1,345 @@
+#!/bin/bash
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
+# Startup script for the Apache Web Server
+#
+# chkconfig: - 85 15
+# description: Apache is a World Wide Web server.  It is used to serve \
+#              HTML files and CGI.
+# processname: httpd
+# pidfile: /etc/httpd/run/httpd.pid
+# config: /etc/httpd/conf/httpd.conf
+
+# Source function library.
+SYSTEMCTL_SKIP_REDIRECT=1
+
+. /etc/rc.d/init.d/functions
+
+if [ -f /etc/sysconfig/httpd ]; then
+	. /etc/sysconfig/httpd
+fi
+export LD_PRELOAD=""
+
+# This will prevent initlog from swallowing up a pass-phrase prompt if
+# mod_ssl needs a pass-phrase from the user.
+INITLOG_ARGS=""
+
+# Path to the apachectl script, server binary, and short-form for messages.
+ulimit -c unlimited
+apachectl=/usr/sbin/httpd
+httpd=${HTTPD-/usr/sbin/httpd}
+prog=httpd
+RETVAL=0
+LOCKFILE="/etc/httpd/conf/building"
+MAX_FILES=$((16384*10))
+MAX_MEMORY=${MAX_MEMORY-1000000}
+MAX_CPUTIME=${MAX_CPU-1800}
+MAX_FILESIZE=${MAX_FILESIZE-4194304}
+MAX_VIRTMEMORY=${MAX_VIRTMEMORY-unlimited}
+MAX_DATASEG=${MAX_DATASEG-unlimited}
+MAX_CORESIZE=${MAX_CORESIZE-0} ; # disabled
+export HOSTNAME
+
+ulimit -n $MAX_FILES -m $MAX_MEMORY -t $MAX_CPUTIME -f $MAX_FILESIZE -v $MAX_VIRTMEMORY -d $MAX_DATASEG -c $MAX_CORESIZE -r 0
+
+build_config() {
+	RUNLEVEL=($(runlevel)) 
+	[[ ${RUNLEVEL[1]} -eq 6 ]] && return
+	_makeLock
+	get_personalities | while read -a line ; do
+		SERVICE=${line[0]}
+		PORT=${line[1]}
+		collapse_config $SERVICE $PORT
+	done
+
+	rm -f /etc/httpd/conf/.dirty
+}
+
+_makeLock() {
+	lockfile -30 -r4 $LOCKFILE|| exit 1
+	trap "_releaseLock" EXIT SIGINT SIGTERM
+}
+
+_releaseLock() {
+	rm -f $LOCKFILE
+}
+
+get_personalities() {
+	for i in /etc/httpd/conf/personalities/* ; do
+		echo ${i##*/} `cat $i`
+	done
+}
+
+collapse_config () {
+	PREFIX=${1:+$1}
+	PORT=${2:-80}
+	BUILD_FILE=/etc/httpd/conf/virtual-${PREFIX}-built
+	# Lockfile used to prevent premature loading
+	mv $BUILD_FILE ${BUILD_FILE}.save
+	# Generate the main Web server configuration 
+	DIR="virtual-${PREFIX/httpd/}"
+	if [[ $PORT == 80 ]] ; then
+		for config_file in /etc/httpd/conf/${DIR%-}/* ; do
+			# PR0001: overlayfs fails to stat presence of server.crt,
+			# substitute out /fst/ with /shadow/ to ensure proper stat()
+			( sed -e 's!^[[:space:]][[:space:]]*!!g' | awk '
+				BEGIN { 
+				ssl=system("[ -f /home/virtual/'${config_file##*/}'/fst/etc/httpd/conf/ssl.crt/server.crt ]") 
+			} 
+			{ 
+			if ($0 ~ /^[[:space:]]*Include[[:space:]]/) { 
+				system("shopt -s nullglob ; for i in "$2"/* ; do cat $i | sed -e s\"}/fst/}/shadow/}\" ; echo "" ; done")
+			} else if ($0 ~ /SSL[a-zA-Z]/ && ssl != 0) { 
+				if ($0 ~/KeyFile/) { 
+					print "SSLEngine On"; 
+					print "SSLCertificateFile /etc/httpd/conf/ssl.crt/server.crt" ; 
+					print "SSLCertificateKeyFile /etc/httpd/conf/ssl.key/server.key" ; 
+				} 
+			} else {
+				($0 !~ /^DocumentRoot/) && gsub("/fst/","/shadow/");
+				print $0;
+		} 
+			}' )  < $config_file >> $BUILD_FILE 
+		done
+	else 
+		for config_file in /etc/httpd/conf/${DIR%-}/* ; do
+			cat $config_file | sed -e 's!^[[:space:]][[:space:]]*!!g' | awk '{if ($0 ~ /^[[:space:]]*Include[[:space:]]/) { system("shopt -s nullglob ; for i in "$2"/* ; do cat $i ; echo "" ; done")} else { print $0 } }' >> $BUILD_FILE
+		done
+	fi
+	OUTPUT=$(httpd -t 2>&1)
+
+	if [ $? -eq 0 ] ; then
+		return
+	fi
+
+	echo "Bailing on bad config"
+	echo $OUTPUT
+	mv /etc/httpd/conf/virtual-httpd-built /etc/httpd/conf/virtual-httpd-built.bad
+	mv /etc/httpd/conf/virtual-httpd-built.save /etc/httpd/conf/virtual-httpd-built
+	RETVAL=255
+	echo failure
+	exit $RETVAL
+}
+
+change_fcgi() {
+	if [ -d /var/tmp/fcgi/ ] ; then
+		chown -R apache:apache /var/tmp/fcgi/
+	fi
+	# mod_disk_cache files
+	DIR=/etc/httpd/run/httpd/lock
+	[[ ! -d $DIR ]] && mkdir $DIR
+	chown apache $DIR
+}
+
+clean_semaphores() {
+	/usr/bin/ipcs -s | grep apache | awk '{print $2}' | while read id ; do
+		/usr/bin/ipcrm -s $id
+	done
+}
+
+# The semantics of these two functions differ from the way apachectl does
+# things -- attempting to start while running is a failure, and shutdown
+# when not running is also a failure.  So we just do it the way init scripts
+# are expected to behave here.
+start() {
+	echo 250 >> /proc/self/oom_score_adj
+	change_fcgi
+	echo -n $"Starting $prog: "
+	get_personalities | while read -a line ; do
+		SERVICE=${line[0]}
+		PORT=${line[1]}
+		MYHTTPD=$httpd
+		MYOPTS="-T"
+		if [[ $PORT == 80 ]] ; then
+			HTTPD_CONF="httpd.conf"
+		else 
+			MYOPTS="${MYOPTS} -DSLAVE"
+			HTTPD_CONF="httpd-${SERVICE}.conf"
+			MYHTTPD="env PHPRC=/etc/$SERVICE ${MYHTTPD}"
+		fi
+
+		HTTPD_CONF="/etc/httpd/conf/${HTTPD_CONF}"
+		if [[ ! -f $HTTPD_CONF ]] ; then 
+			echo_warning "httpd conf ${HTTPD_CONF##*/} missing"
+			continue
+		fi
+		daemon $MYHTTPD  $MYOPTS -f $HTTPD_CONF
+		RETVAL=$?
+		# Special case for main web server, we actually care about this
+		if [[ $PORT == 80 ]] ; then
+			touch /var/lock/subsys/httpd
+			if [[ $RETVAL != 0 && -f ${HTTPD_CONF/.conf/-custom.conf} ]] ; then
+				echo -n "(forcibly terminating...) "
+				IP=$(grep  Listen /etc/httpd/conf/httpd-custom.conf | awk '{print $2 ; exit}')
+					# Use @$IP syntax on v6.5+ platforms
+					/usr/sbin/lsof -t -u apache -a -i @$IP | xargs kill -9
+					daemon $MYHTTPD $MYOPTS -f $HTTPD_CONF
+					RETVAL=$?
+				fi
+			fi
+
+		done
+
+		echo 
+	}
+
+stop() {
+	echo -n $"Stopping $prog: "
+	PID=`cat /etc/httpd/run/httpd.pid`
+
+	get_personalities | while read -a line ; do
+		SERVICE=${line[0]}
+		PORT=${line[1]}
+		MYOPTS="-T"
+		if [[ $PORT == 80 ]] ; then
+			HTTPD_CONF="httpd.conf"
+			PIDFILE="/etc/httpd/run/httpd.pid"
+		else 
+			MYOPTS="${MYOPTS} -DSLAVE"
+			HTTPD_CONF="httpd-${SERVICE}.conf"
+			MYHTTPD="env PHPRC=/etc/$SERVICE"
+			PIDFILE="/etc/httpd/run/httpd-${SERVICE}.pid"
+		fi
+
+		HTTPD_CONF="/etc/httpd/conf/${HTTPD_CONF}"
+
+		$apachectl -f $HTTPD_CONF -k stop -T
+
+		RETVAL=$?
+		# PR 26749
+		#for i in $(ipcs | grep apache | awk '{print $2}') ; do ipcrm -s $i ; done
+		# wait 30 seconds... 120 x's
+		[ $RETVAL = 0 ] && rm -f $PIDFILE && ( [[ $PORT == 80 ]] &&
+			rm -f /var/lock/subsys/httpd || true )
+			
+		done
+
+		str="x"
+		while [ ! -z "$PID" -a -d /proc/$PID -a $str != "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" ] ; do
+			if [ ! -d /proc/$PID ] ; then
+				break
+			fi
+			# sleep .25 seconds
+			usleep 250000
+			str=${str}x
+		done
+	echo_success 
+	echo
+	clean_semaphores
+}
+
+reload-with-build() {
+	build_config
+	reload
+}
+
+reload() {
+	echo -n $"Reloading $prog: "
+	httpd -t > /dev/null 2>&1
+	if [ $? -ne 0 ] ; then
+		echo "Bailing on bad config"
+		RETVAL=255
+		echo
+		return
+	fi
+
+	get_personalities | while read -a line ; do
+		SERVICE=${line[0]}
+		PORT=${line[1]}
+		MYOPTS=""
+
+		if [[ $PORT == 80 ]] ; then
+			HTTPD_CONF="httpd.conf"
+			PIDFILE="/etc/httpd/run/httpd.pid"
+
+		else 
+			MYOPTS="${MYOPTS} -DSLAVE"
+			HTTPD_CONF="httpd-${SERVICE}.conf"
+			MYHTTPD="env PHPRC=/etc/$SERVICE"
+			PIDFILE="/etc/httpd/run/httpd-${SERVICE}.pid"
+		fi
+
+		HTTPD_CONF="/etc/httpd/conf/${HTTPD_CONF}"
+		MYOPTS="${MYOPTS}"
+
+		$apachectl -f $HTTPD_CONF $MYOPTS -k graceful -T
+		RETVAL=$?
+		[[ $RETVAL != 0 ]] && echo_warning "${SERVICE}: graceful failed"
+	done
+
+
+	echo
+}
+
+is_reboot() {
+	RUNLEVEL=($(runlevel)) 
+	# halt and #reboot, don't bother to rebuild
+	[[ ${RUNLEVEL[1]} == 0 ]]  || [[ ${RUNLEVEL[2]} == 6 ]]
+	return $?
+}
+
+# See how we were called.
+case "$1" in
+  	start)
+		start
+		;;
+  	stop)
+		stop
+		;;
+  	status)
+		status $httpd
+		RETVAL=$?
+		;;
+  	restartfast|restart-fast)
+		stop
+		start
+		;;
+  	graceful)
+		reload
+		;;
+  	restart)
+		build_config
+		stop
+		start
+		;;
+  	condrestart)
+		if [ -f /etc/httpd/run/httpd.pid ] ; then
+			stop
+			start
+		fi
+		;;
+  	buildconfig)
+		build_config
+		;;
+  	reload|reload-grc)
+		build_config
+		reload
+		;;
+	reload-fast|reloadfast)
+		reload
+		;;
+  	help|configtest|fullstatus)
+		$apachectl $@
+		RETVAL=$?
+		;;
+	*)
+		echo $"Usage: $prog {start|stop|restart|condrestart|reload|status|fullstatus|graceful|help|configtest|restart-fast|buildconfig}"
+		exit 1
+esac
+
+exit $RETVAL

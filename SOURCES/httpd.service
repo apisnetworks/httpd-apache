@@ -1,0 +1,28 @@
+[Unit]
+Description=The Apache HTTP Server
+After=network.target remote-fs.target nss-lookup.target populate-tmp.service virtualhosting.service fsmount.service
+
+[Service]
+User=root
+Type=forking
+EnvironmentFile=/etc/sysconfig/httpd
+ExecStartPre=-/usr/bin/mkdir /run/httpd 
+PIDFile=/run/httpd.pid
+ExecStart=/etc/systemd/user/httpd.init start
+ExecReload=/etc/systemd/user/httpd.init reload
+ExecStop=/etc/systemd/user/httpd.init stop
+# We want systemd to give httpd some time to finish gracefully, but still want
+# it to kill httpd after TimeoutStopSec if something went wrong during the
+# graceful stop. Normally, Systemd sends SIGTERM signal right after the
+# ExecStop, which would kill httpd. We are sending useless SIGCONT here to give
+# httpd time to finish.
+KillSignal=SIGCONT
+# Propagate HOSTNAME for use with host-dependent rewrites
+PassEnvironment=HOSTNAME
+PrivateTmp=false
+OOMScoreAdjust=500
+Nice=-10
+LimitNOFILE=100000
+
+[Install]
+WantedBy=multi-user.target
