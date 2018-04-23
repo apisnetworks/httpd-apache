@@ -28,7 +28,6 @@ Source6: htcacheclean.service
 Source7: htcacheclean.sysconf
 Source8: httpd-apnscp-rewrite-map.conf
 Source9: httpd.tmpfiles
-Source10: httpd.logrotate
 
 Patch0: suexec-apnscp.patch
 License: Apache License, Version 2.0
@@ -285,18 +284,17 @@ test -f /etc/sysconfig/httpd-disable-posttrans || \
   /bin/systemctl try-restart httpd.service htcacheclean.service >/dev/null 2>&1 || :
 
 %define sslcert %{_sysconfdir}/pki/tls/certs/server.pem
-%define sslkey %{_sysconfdir}/pki/tls/certs/server.pem
 
 %post -n mod_ssl
 umask 077
 
-ln -fs %{sslcert} %{_sysconfdir}/httpd/conf/server.key
+ln -fs %{sslcert} %{_sysconfdir}/httpd/conf/server.pem
 if [ -f %{sslcert} ] ; then 
   exit 0 
 fi
 
 cat << EOF | %{_bindir}/openssl req -rand /proc/apm:/proc/cpuinfo:/proc/dma:/proc/filesystems:/proc/interrupts:/proc/ioports:/proc/pci:/proc/rtc:/proc/uptime -nodes \
-  -newkey rsa:1024 %{sslkey} -keyout %{sslkey} -x509 -days 365 -out %{sslkey} 2>/dev/null
+  -newkey rsa:1024 -keyout %{sslcert} -x509 -days 365 -out %{sslcert} 2>/dev/null
 --
 SomeState
 SomeCity
@@ -542,5 +540,5 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
-* Mon Apr 23 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.23-1.el7.apnscp
+* Mon Apr 23 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.33-1.el7.apnscp
 - Initial release
