@@ -101,16 +101,6 @@ The mod_authnz_ldap module for the Apache HTTP server provides
 authentication and authorization against an LDAP server, while
 mod_ldap provides an LDAP cache.
 
-%package -n mod_lua
-Group: System Environment/Daemons
-Summary: Lua language module for the Apache HTTP server
-BuildRequires: lua-devel
-Requires: httpd = %{version}-%{release}, httpd-mmn = %{mmn}
-
-%description -n mod_lua
-The mod_lua module for the Apache HTTP server allows the server to be
-extended with scripts written in the Lua programming language.
-
 %package -n mod_proxy_html
 Group: System Environment/Daemons
 Summary: Proxy HTML filter modules for the Apache HTTP server
@@ -184,7 +174,7 @@ export LDFLAGS="-Wl,-z,relro,-z,now"
 	--with-suexec-uidmin=500 --with-suexec-gidmin=500 \
         --enable-pie \
         --with-pcre \
-        --enable-mods-shared=all --disable-distcache \
+        --enable-mods-shared=all --disable-distcache --disable-lua \
         --enable-ssl --with-ssl --enable-bucketeer \
         --enable-case-filter --enable-case-filter-in \
         --disable-imagemap --enable-nonportable-atomics=yes $*
@@ -204,6 +194,7 @@ for s in httpd htcacheclean; do
 done
 
 install -p -m 644 $RPM_SOURCE_DIR/httpd-apnscp-rewrite-map.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
+install -p -m 644 $RPM_SOURCE_DIR/httpd.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
 install -p -m 755 $RPM_SOURCE_DIR/httpd.init $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/user/
 
 # for holding mod_dav lock database
@@ -212,6 +203,9 @@ mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/dav
 # create a prototype session cache
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/cache/mod_ssl
 touch $RPM_BUILD_ROOT%{_localstatedir}/cache/mod_ssl/scache.{dir,pag,sem}
+
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf/{virtual,personalities}
+echo 80 > $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf/personalities/httpd
 
 # Make the MMN accessible to module packages
 echo %{mmn} > $RPM_BUILD_ROOT%{_includedir}/httpd/.mmn
@@ -268,6 +262,7 @@ rm -rf \
 /usr/sbin/groupadd -g 48 -r apache 2> /dev/null || :
 /usr/sbin/useradd -c "Apache" -u 48 -g 48 \
   -s /sbin/nologin -r -d %{contentdir} apache 2> /dev/null || :
+[[ ! -f %{_sysconfdir}/httpd/conf/httpd-custom.conf ]] && touch %{_sysconfdir}/httpd/conf/httpd-custom.conf
 
 %post
 %systemd_post httpd.service htcacheclean.service
@@ -325,6 +320,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_sysconfdir}/httpd/run
 %dir %{_sysconfdir}/httpd/conf
 %dir %{_sysconfdir}/httpd/conf.d
+%dir %{_sysconfdir}/httpd/conf/personalities
+%dir %{_sysconfdir}/httpd/conf/virtual
+%config(noreplace) %{_sysconfdir}/httpd/conf/personalities/httpd
 %config %{_sysconfdir}/httpd/conf/httpd.conf
 %config %{_sysconfdir}/httpd/conf/httpd-apnscp-rewrite-map.conf
 %config(noreplace) %{_sysconfdir}/httpd/conf/magic
@@ -506,10 +504,6 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_libdir}/httpd/modules/mod_ldap.so
 %{_libdir}/httpd/modules/mod_authnz_ldap.so
-
-%files -n mod_lua
-%defattr(-,root,root)
-%{_libdir}/httpd/modules/mod_lua.so
 
 %files -n mod_proxy_html
 %defattr(-,root,root)

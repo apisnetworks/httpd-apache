@@ -157,7 +157,7 @@ clean_semaphores() {
 # when not running is also a failure.  So we just do it the way init scripts
 # are expected to behave here.
 start() {
-	echo 250 >> /proc/self/oom_score_adj
+	echo 500 >> /proc/self/oom_score_adj
 	change_fcgi
 	echo -n $"Starting $prog: "
 	get_personalities | while read -a line ; do
