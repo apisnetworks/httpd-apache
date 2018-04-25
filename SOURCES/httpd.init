@@ -27,12 +27,13 @@
 
 # Source function library.
 SYSTEMCTL_SKIP_REDIRECT=1
-
+shopt -s nullglob
 . /etc/rc.d/init.d/functions
 
 if [ -f /etc/sysconfig/httpd ]; then
 	. /etc/sysconfig/httpd
 fi
+OPTIONS=${OPTIONS:-""}
 export LD_PRELOAD=""
 
 # This will prevent initlog from swallowing up a pass-phrase prompt if
@@ -90,7 +91,7 @@ collapse_config () {
 	PORT=${2:-80}
 	BUILD_FILE=/etc/httpd/conf/virtual-${PREFIX}-built
 	# Lockfile used to prevent premature loading
-	mv $BUILD_FILE ${BUILD_FILE}.save
+	[[ -f $BUILD_FILE ]] && mv $BUILD_FILE ${BUILD_FILE}.save
 	# Generate the main Web server configuration 
 	DIR="virtual-${PREFIX/httpd/}"
 	if [[ $PORT == 80 ]] ; then
@@ -114,14 +115,14 @@ collapse_config () {
 				($0 !~ /^DocumentRoot/) && gsub("/fst/","/shadow/");
 				print $0;
 		} 
-			}' )  < $config_file >> $BUILD_FILE 
+			}' )  < "$config_file" >> $BUILD_FILE 
 		done
 	else 
 		for config_file in /etc/httpd/conf/${DIR%-}/* ; do
-			cat $config_file | sed -e 's!^[[:space:]][[:space:]]*!!g' | awk '{if ($0 ~ /^[[:space:]]*Include[[:space:]]/) { system("shopt -s nullglob ; for i in "$2"/* ; do cat $i ; echo "" ; done")} else { print $0 } }' >> $BUILD_FILE
+			sed -e 's!^[[:space:]][[:space:]]*!!g' < "$config_file" | awk '{if ($0 ~ /^[[:space:]]*Include[[:space:]]/) { system("shopt -s nullglob ; for i in "$2"/* ; do cat $i ; echo "" ; done")} else { print $0 } }' >> $BUILD_FILE
 		done
 	fi
-	OUTPUT=$(httpd -t 2>&1)
+	OUTPUT=$(httpd $OPTIONS -T -t 2>&1)
 
 	if [ $? -eq 0 ] ; then
 		return
@@ -164,7 +165,7 @@ start() {
 		SERVICE=${line[0]}
 		PORT=${line[1]}
 		MYHTTPD=$httpd
-		MYOPTS="-T"
+		MYOPTS="-T ${OPTIONS}"
 		if [[ $PORT == 80 ]] ; then
 			HTTPD_CONF="httpd.conf"
 		else 
@@ -178,7 +179,7 @@ start() {
 			echo_warning "httpd conf ${HTTPD_CONF##*/} missing"
 			continue
 		fi
-		daemon $MYHTTPD  $MYOPTS -f $HTTPD_CONF
+		daemon $MYHTTPD $MYOPTS -f $HTTPD_CONF
 		RETVAL=$?
 		# Special case for main web server, we actually care about this
 		if [[ $PORT == 80 ]] ; then
@@ -205,7 +206,7 @@ stop() {
 	get_personalities | while read -a line ; do
 		SERVICE=${line[0]}
 		PORT=${line[1]}
-		MYOPTS="-T"
+		MYOPTS="-T ${OPTIONS}"
 		if [[ $PORT == 80 ]] ; then
 			HTTPD_CONF="httpd.conf"
 			PIDFILE="/etc/httpd/run/httpd.pid"
@@ -250,7 +251,7 @@ reload-with-build() {
 
 reload() {
 	echo -n $"Reloading $prog: "
-	httpd -t > /dev/null 2>&1
+	httpd -T -t > /dev/null 2>&1
 	if [ $? -ne 0 ] ; then
 		echo "Bailing on bad config"
 		RETVAL=255
@@ -261,7 +262,7 @@ reload() {
 	get_personalities | while read -a line ; do
 		SERVICE=${line[0]}
 		PORT=${line[1]}
-		MYOPTS=""
+		MYOPTS="-T ${OPTIONS}"
 
 		if [[ $PORT == 80 ]] ; then
 			HTTPD_CONF="httpd.conf"
@@ -277,7 +278,7 @@ reload() {
 		HTTPD_CONF="/etc/httpd/conf/${HTTPD_CONF}"
 		MYOPTS="${MYOPTS}"
 
-		$apachectl -f $HTTPD_CONF $MYOPTS -k graceful -T
+		$apachectl -f $HTTPD_CONF $MYOPTS -k graceful
 		RETVAL=$?
 		[[ $RETVAL != 0 ]] && echo_warning "${SERVICE}: graceful failed"
 	done

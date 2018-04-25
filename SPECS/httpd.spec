@@ -28,8 +28,10 @@ Source6: htcacheclean.service
 Source7: htcacheclean.sysconf
 Source8: httpd-apnscp-rewrite-map.conf
 Source9: httpd.tmpfiles
+Source10: httpd-custom.conf
 
 Patch0: suexec-apnscp.patch
+Patch1: httpd-apxs.patch
 License: Apache License, Version 2.0
 Group: System Environment/Daemons
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -40,7 +42,7 @@ BuildRequires: systemd-devel
 Requires: /etc/mime.types
 Requires: /usr/bin/x86_64-redhat-linux-gcc
 Obsoletes: httpd-suexec
-Conflicts: httpd <= 2.4.10
+Conflicts: httpd < 2.4.30
 Requires(pre): /usr/sbin/useradd
 Provides: webserver
 Provides: mod_dav = %{version}-%{release}, httpd-suexec = %{version}-%{release}
@@ -131,6 +133,7 @@ Security (TLS) protocols.
 %prep
 %setup -q
 %patch0 -p1
+%patch1 -p1
 
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
 sed -i 's/@RELEASE@/%{release}/' server/core.c
@@ -195,6 +198,7 @@ done
 
 install -p -m 644 $RPM_SOURCE_DIR/httpd-apnscp-rewrite-map.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
 install -p -m 644 $RPM_SOURCE_DIR/httpd.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
+install -p -m 644 $RPM_SOURCE_DIR/httpd-custom.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
 install -p -m 755 $RPM_SOURCE_DIR/httpd.init $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/user/
 
 # for holding mod_dav lock database
@@ -216,7 +220,7 @@ touch $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf/http10
 # tmpfiles.d configuration
 mkdir -p $RPM_BUILD_ROOT%{_prefix}/lib/tmpfiles.d 
 install -m 644 -p $RPM_SOURCE_DIR/httpd.tmpfiles \
-   $RPM_BUILD_ROOT%{_prefix}/lib/tmpfiles.d/httpd.conf
+   $RPM_BUILD_ROOT%{_prefix}/lib/tmpfiles.d/httpd.conf  
 
 # Set up /var directories
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/httpd
@@ -262,11 +266,11 @@ rm -rf \
 /usr/sbin/groupadd -g 48 -r apache 2> /dev/null || :
 /usr/sbin/useradd -c "Apache" -u 48 -g 48 \
   -s /sbin/nologin -r -d %{contentdir} apache 2> /dev/null || :
-[[ ! -f %{_sysconfdir}/httpd/conf/httpd-custom.conf ]] && touch %{_sysconfdir}/httpd/conf/httpd-custom.conf
 
 %post
 %systemd_post httpd.service htcacheclean.service
 httxt2dbm -i %{_sysconfdir}/httpd/conf/http10 -o %{_sysconfdir}/httpd/conf/http10
+[[ -f %{_sysconfdir}/httpd/conf/virtual-httpd-built ]] || env OPTIONS="-DNO_SSL" %{_sysconfdir}/systemd/user/httpd.init buildconfig
 
 %preun
 %systemd_preun httpd.service htcacheclean.service
@@ -324,6 +328,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_sysconfdir}/httpd/conf/virtual
 %config(noreplace) %{_sysconfdir}/httpd/conf/personalities/httpd
 %config %{_sysconfdir}/httpd/conf/httpd.conf
+%config(noreplace) %{_sysconfdir}/httpd/conf/httpd-custom.conf
 %config %{_sysconfdir}/httpd/conf/httpd-apnscp-rewrite-map.conf
 %config(noreplace) %{_sysconfdir}/httpd/conf/magic
 %config(noreplace) %{_sysconfdir}/httpd/conf/mime.types
