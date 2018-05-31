@@ -41,6 +41,7 @@ BuildRequires: apr-devel >= 1.4.0, apr-util-devel >= 1.4.0, pcre-devel >= 5.0, l
 BuildRequires: systemd-devel
 Requires: /etc/mime.types
 Requires: /usr/bin/x86_64-redhat-linux-gcc
+Requires: util-linux
 Obsoletes: httpd-suexec
 Conflicts: httpd < 2.4.30
 Requires(pre): /usr/sbin/useradd
