@@ -72,7 +72,8 @@ build_config() {
 }
 
 _makeLock() {
-	lockfile -30 -r4 $LOCKFILE|| exit 1
+	exec 4<> $LOCKFILE
+	flock -x -w 120 4 || exit 1
 	trap "_releaseLock" EXIT SIGINT SIGTERM
 }
 
