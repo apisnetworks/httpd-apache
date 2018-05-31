@@ -208,7 +208,7 @@ mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/dav
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/cache/mod_ssl
 touch $RPM_BUILD_ROOT%{_localstatedir}/cache/mod_ssl/scache.{dir,pag,sem}
 
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf/{virtual,personalities}
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf/{domains,virtual,personalities}
 echo 80 > $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf/personalities/httpd
 
 # Make the MMN accessible to module packages
@@ -324,6 +324,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_sysconfdir}/httpd/run
 %dir %{_sysconfdir}/httpd/conf
 %dir %{_sysconfdir}/httpd/conf.d
+%dir %{_sysconfdir}/httpd/conf/domains
 %dir %{_sysconfdir}/httpd/conf/personalities
 %dir %{_sysconfdir}/httpd/conf/virtual
 %config(noreplace) %{_sysconfdir}/httpd/conf/personalities/httpd
