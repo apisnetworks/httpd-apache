@@ -271,9 +271,9 @@ rm -rf \
 %post
 # Copy old LoadModule config injected below MODULE_MARKER
 if [[ -f %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave ]] ; then
-  awk '/^\s*LoadModule/i && MATCH{print;} /^#\s*MODULE_MARKER/{MATCH=1}' \
+  awk 'BEGIN {IGNORECASE = 1} /^\s*LoadModule\s*/ && MATCH{print;} /^#\s*MODULE_MARKER/{MATCH=1}' \
     %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave | sed -n -i -e \
-    '/^\s#\s*MODULE_MARKER\s*/r /dev/stdin' -e p \
+    '/^\s*#\s*MODULE_MARKER\s*/r /dev/stdin' -e p \
     %{_sysconfdir}/httpd/conf/httpd.conf
 fi
 
