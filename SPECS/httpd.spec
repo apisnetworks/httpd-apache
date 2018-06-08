@@ -269,9 +269,25 @@ rm -rf \
   -s /sbin/nologin -r -d %{contentdir} apache 2> /dev/null || :
 
 %post
+# Copy old LoadModule config injected below MODULE_MARKER
+if [[ -f %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave ]] ; then
+  awk '/^\s*LoadModule/i && MATCH{print;} /^#\s*MODULE_MARKER/{MATCH=1}' \
+    %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave | sed -n -i -e \
+    '/^\s#\s*MODULE_MARKER\s*/r /dev/stdin' -e p \
+    %{_sysconfdir}/httpd/conf/httpd.conf
+fi
+
 %systemd_post httpd.service htcacheclean.service
 httxt2dbm -i %{_sysconfdir}/httpd/conf/http10 -o %{_sysconfdir}/httpd/conf/http10
-[[ -f %{_sysconfdir}/httpd/conf/virtual-httpd-built ]] || env OPTIONS="-DNO_SSL" %{_sysconfdir}/systemd/user/httpd.init buildconfig
+
+! compgen -G "%{_sysconfdir}/httpd/conf/domains/*" && for path in /home/virtual/site* ; do
+  SITE=${SITE##*/}
+  [[ -f $path/info/domain_map ]] || continue
+  httxt2dbm -i $path/info/domain_map -o %{_sysconfdir}/httpd/conf/domains/${SITE}
+done
+
+[[ -f %{_sysconfdir}/httpd/conf/virtual-httpd-built ]] || \
+  env OPTIONS="-DNO_SSL" %{_sysconfdir}/systemd/user/httpd.init buildconfig
 
 %preun
 %systemd_preun httpd.service htcacheclean.service
@@ -541,5 +557,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
-* Mon Apr 23 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.33-1.el7.apnscp
+* Thu Jun 07 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.33-2.apnscp
+- Migrate modules on upgrade
+- Skip addon domain lookups on primary domain match
+- Restrict .htaccess lookups below fst/
+* Mon Apr 23 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.33-1.apnscp
 - Initial release
