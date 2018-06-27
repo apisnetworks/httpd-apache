@@ -15,7 +15,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.33
-Release: 1%{?dist}
+Release: 2%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -557,9 +557,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
-* Thu Jun 07 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.33-2.apnscp
+* Thu Jun 28 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.33-2.apnscp
+- Inherit dummyset rules before htaccess parsing (Horde)
+- Correct symlink rules, bandwidth log alias
 - Migrate modules on upgrade
 - Skip addon domain lookups on primary domain match
 - Restrict .htaccess lookups below fst/
+
 * Mon Apr 23 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.33-1.apnscp
 - Initial release
