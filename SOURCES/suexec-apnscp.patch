@@ -1,15 +1,14 @@
-diff -Nur httpd-2.4.29-orig/support/suexec.c httpd-2.4.29/support/suexec.c
---- httpd-2.4.29-orig/support/suexec.c	2016-03-21 08:37:25.000000000 -0400
-+++ httpd-2.4.29/support/suexec.c	2017-11-01 16:02:13.532419132 -0400
-@@ -70,6 +70,7 @@
- 
- extern char **environ;
+--- httpd-2.4.34-orig/support/suexec.c	2018-05-30 15:09:00.000000000 -0400
++++ httpd-2.4.34/support/suexec.c	2018-07-18 00:46:16.265750587 -0400
+@@ -87,6 +87,7 @@
+ /* Non-syslog support. */
  static FILE *log = NULL;
-+static char *site_root = NULL;
+ #endif
++static char *site_root = 0;
  
  static const char *const safe_env_lst[] =
  {
-@@ -95,6 +96,8 @@
+@@ -112,6 +113,8 @@
      "LAST_MODIFIED=",
      "PATH_INFO=",
      "PATH_TRANSLATED=",
@@ -18,7 +17,7 @@ diff -Nur httpd-2.4.29-orig/support/suexec.c httpd-2.4.29/support/suexec.c
      "QUERY_STRING=",
      "QUERY_STRING_UNESCAPED=",
      "REMOTE_ADDR=",
-@@ -123,6 +126,7 @@
+@@ -140,6 +143,7 @@
      "SERVER_PROTOCOL=",
      "SERVER_SIGNATURE=",
      "SERVER_SOFTWARE=",
@@ -26,88 +25,79 @@ diff -Nur httpd-2.4.29-orig/support/suexec.c httpd-2.4.29/support/suexec.c
      "UNIQUE_ID=",
      "USER_NAME=",
      "TZ=",
-@@ -136,23 +140,60 @@
+@@ -153,7 +157,41 @@
  static void err_output(int is_error, const char *fmt, va_list ap) 
      __attribute__((format(printf,2,0)));
  
 -static void err_output(int is_error, const char *fmt, va_list ap)
++
 +static void log_close()
- {
--#ifdef AP_LOG_EXEC
--    time_t timevar;
--    struct tm *lt;
-+    if (log == NULL) {
-+      return;
-+    }
++{
 +    /* Be sure to close the log file so the CGI can't mess with it. */
-+#if APR_HAVE_FCNTL_H
-+    /*
-+     * ask fcntl(2) to set the FD_CLOEXEC flag on the log file,
-+     * so it'll be automagically closed if the exec() call succeeds.
-+     */
-+    fflush(log);
-+    setbuf(log, NULL);
-+    if ((fcntl(fileno(log), F_SETFD, FD_CLOEXEC) == -1)) {
-+        log_err("error: can't set close-on-exec flag");
-+        exit(122);
++#ifdef AP_LOG_SYSLOG
++    if (log_open) {
++        closelog();
++        log_open = 0;
 +    }
 +#else
-+    /*
-+     * In this case, exec() errors won't be logged because we have already
-+     * dropped privileges and won't be able to reopen the log file.
-+     */
-+    fclose(log);
-+    log = NULL;
++    if (log != NULL) {
++#if APR_HAVE_FCNTL_H
++        /*
++         * ask fcntl(2) to set the FD_CLOEXEC flag on the log file,
++         * so it'll be automagically closed if the exec() call succeeds.
++         */
++        fflush(log);
++        setbuf(log, NULL);
++        if ((fcntl(fileno(log), F_SETFD, FD_CLOEXEC) == -1)) {
++            log_err("error: can't set close-on-exec flag");
++            exit(122);
++        }
++#else
++        /*
++         * In this case, exec() errors won't be logged because we have already
++         * dropped privileges and won't be able to reopen the log file.
++         */
++        fclose(log);
++        log = NULL;
++#endif
++    }
 +#endif
 +}
++
++static void log_open() 
+ {
+ #if defined(AP_LOG_SYSLOG)
+     if (!log_open) {
+@@ -163,9 +201,6 @@
  
--    if (!log) {
-+static void log_open()
-+{
-+    if (log != NULL) {
-+      // @todo make warning?
-+      return;
-+    }
-+    /** 
-+     * When working with a jailed environment, rtd context
-+     * will change. Always reopen log when emitting message.
-+     */
+     vsyslog(is_error ? LOG_ERR : LOG_INFO, fmt, ap);
+ #elif defined(AP_LOG_EXEC)
+-    time_t timevar;
+-    struct tm *lt;
+-
+     if (!log) {
  #if defined(_LARGEFILE64_SOURCE) && HAVE_FOPEN64
--        if ((log = fopen64(AP_LOG_EXEC, "a")) == NULL) {
-+    if ((log = fopen64(AP_LOG_EXEC, "a")) == NULL) {
- #else
--        if ((log = fopen(AP_LOG_EXEC, "a")) == NULL) {
-+    if ((log = fopen(AP_LOG_EXEC, "a")) == NULL) {
- #endif
--            fprintf(stderr, "suexec failure: could not open log file\n");
--            perror("fopen");
--            exit(1);
--        }
-+        fprintf(stderr, "suexec failure: could not open log file\n");
-+        perror("fopen");
-+        exit(1);
+         if ((log = fopen64(AP_LOG_EXEC, "a")) == NULL) {
+@@ -177,6 +212,18 @@
+             exit(1);
+         }
      }
++#endif
 +}
 +
 +static void err_output(int is_error, const char *fmt, va_list ap)
 +{
-+#ifdef AP_LOG_EXEC
++#if defined(AP_LOG_SYSLOG)
++    vsyslog(is_error ? LOG_ERR : LOG_INFO, fmt, ap);
++#elif defined(AP_LOG_EXEC)
 +    time_t timevar;
 +    struct tm *lt;
++
 +    log_open();
  
      if (is_error) {
          fprintf(stderr, "suexec policy violation: see suexec log for more "
-@@ -167,8 +208,6 @@
-             lt->tm_hour, lt->tm_min, lt->tm_sec);
- 
-     vfprintf(log, fmt, ap);
--
--    fflush(log);
- #endif /* AP_LOG_EXEC */
-     return;
- }
-@@ -336,12 +375,12 @@
+@@ -362,12 +409,12 @@
       */
  #ifdef _OSD_POSIX
      /* User name comparisons are case insensitive on BS2000/OSD */
@@ -122,7 +112,7 @@ diff -Nur httpd-2.4.29-orig/support/suexec.c httpd-2.4.29/support/suexec.c
          log_err("user mismatch (%s instead of %s)\n", pw->pw_name, AP_HTTPD_USER);
          exit(103);
      }
-@@ -366,7 +405,6 @@
+@@ -392,7 +439,6 @@
       */
      if (!strncmp("~", target_uname, 1)) {
          target_uname++;
@@ -130,29 +120,31 @@ diff -Nur httpd-2.4.29-orig/support/suexec.c httpd-2.4.29/support/suexec.c
      }
  
      /*
-@@ -433,25 +471,76 @@
-     }
- #endif /*_OSD_POSIX*/
- 
-+    if (getcwd(cwd, AP_MAXPATH) == NULL) {
-+        log_err("emerg: cannot get current working directory\n");
-+        exit(111);
-+    }
+@@ -465,6 +511,93 @@
+     uid = pw->pw_uid;
+     actual_uname = strdup(pw->pw_name);
+     target_homedir = strdup(pw->pw_dir);
 +
 +    /*
 +     * Chroot if SITE_ROOT is set
-+     * FastCGI requests do not pass SetEnv
-+     * vars from Apache
-+     */
++     * FastCGI requests do not pass SetEnv vars from Apache
++     */ 
 +    if (0 != (site_root = (char*)getenv("SITE_ROOT"))) {
 +        char *tmp;
-+        if (strncmp(cwd, site_root, strlen(site_root)) != 0 ||
-+        (*(tmp = cwd + strlen(site_root)) && *tmp  != '/')) {
-+            log_err("error: working directory not in site root: (%s) (%s)\n", cwd, site_root);  
++        if (getcwd(cwd, AP_MAXPATH) == NULL) {
++            log_err("emerg: cannot get current working directory\n");
++            exit(111);
++        }
++        
++        if (strncmp(cwd, site_root, strlen(site_root)) != 0
++            || (*(tmp = cwd + strlen(site_root)) && *tmp != '/')) 
++        {
++            log_err("error: working dir not in site root: (%s) (%s)\n", cwd, site_root);
 +            exit(122);
 +        }
++
 +        /*
-+         * passwd/group db reopened once jailed
++         * passwd and group dbs are reopened once chrooted
 +         */
 +        endpwent();
 +        endgrent();
@@ -160,120 +152,92 @@ diff -Nur httpd-2.4.29-orig/support/suexec.c httpd-2.4.29/support/suexec.c
 +        if (chroot(site_root) != 0) {
 +            log_err("error: cannot chroot to site root: (%s)\n", site_root);
 +            exit(122);
-+        } 
-+        /*
-+         * Force log closure to reopen in jail
++        }
++        
++        log_open();
++        if (getcwd(cwd, AP_MAXPATH) == NULL) {
++            log_err("cannot get current working directory\n");
++            exit(111);
++        }
++            
++        /**
++         * Accounts can support multiple uids for suexec
 +         */
-+        log_close(); 
 +        if (!strncmp("/home", cwd, 5)) {
 +            char *user;
 +            char *p = strstr(cwd + 1, "/");
 +            int len = p - cwd - 2;
 +            user = strndup(cwd+6, len);
-+            pw = getpwnam(user);
++            pw  = getpwnam(user);
++            log_err("test: %s\n", user);
 +            if (pw == NULL) {
-+              log_err("crit: user (%s) UID invalid in site root: (%d)\n", user, uid);
-+              exit(102);
++                log_err("crit: user (%s) UID invalid in site root: (%d)\n", user, uid);
++                exit(102);
 +            }
-+            uid = pw->pw_uid;
++            uid  = pw->pw_uid;
 +            sprintf(target_uname, "%d", uid);
 +            userdir = 1;
 +        } else if (NULL == (pw = getpwuid(uid))) {
-+            log_err("crit: UID invalid in site root: (%d)\n", uid);
++            log_err("crit: UID invalid in site root: (%d)\n",  uid);
 +            exit(102);
 +        }
++
++        actual_uname = strdup(pw->pw_name);
++        target_homedir = strdup(pw->pw_dir);
++        if (NULL == (gr = getgrgid(gid))) {
++            log_err("crit: GID invalid in sie root: (%d)\n", gid);
++            exit(106);
++        }
++        actual_gname = strdup(gr->gr_name);
 +    }
 +
-     /*
-      * Save these for later since initgroups will hose the struct
-      */
-     uid = pw->pw_uid;
-     actual_uname = strdup(pw->pw_name);
-     target_homedir = strdup(pw->pw_dir);
++	char *newenv = malloc(strlen(cwd) + strlen(cmd) + 18);
++	sprintf(newenv, "SCRIPT_FILENAME=%s/%s", cwd, cmd);
++	putenv(newenv);
 +    
++    /*
++     * Get the current working directory, as well as the proper
++     * document root (dependant upon whether or not it is a
++     * ~userdir request).  Error out if we cannot get either one,
++     * or if the current working directory is not in the docroot.
++     * Use chdir()s and getcwd()s to avoid problems with symlinked
++     * directories.  Yuck.
++     *
++     * cwd is properly populated if SITE_ROOT env is set
++     */
++    if (!site_root && getcwd(cwd, AP_MAXPATH) == NULL) {
++        log_err("cannot get current working directory\n");
++        exit(111);
++    }
++
++
      if (actual_uname == NULL || target_homedir == NULL) {
          log_err("failed to alloc memory\n");
          exit(126);
-     }
--
-+    
-     /*
-      * Log the transaction here to be sure we have an open log
-      * before we setuid().
-      */
--    log_no_err("uid: (%s/%s) gid: (%s/%s) cmd: %s\n",
-+    log_no_err("uid: (%s/%s) gid: (%s/%s) cmd: %s/%s\n",
-                target_uname, actual_uname,
-                target_gname, actual_gname,
--               cmd);
-+               cwd, cmd);
- 
-     /*
-      * Error out if attempt is made to execute as root or as
-@@ -498,14 +587,13 @@
-      * Use chdir()s and getcwd()s to avoid problems with symlinked
-      * directories.  Yuck.
-      */
--    if (getcwd(cwd, AP_MAXPATH) == NULL) {
-+    if (!site_root && getcwd(cwd, AP_MAXPATH) == NULL) {
-         log_err("cannot get current working directory\n");
-         exit(111);
-     }
- 
-     if (userdir) {
-         if (((chdir(target_homedir)) != 0) ||
--            ((chdir(AP_USERDIR_SUFFIX)) != 0) ||
-             ((getcwd(dwd, AP_MAXPATH)) == NULL) ||
-             ((chdir(cwd)) != 0)) {
-             log_err("cannot get docroot information (%s)\n", target_homedir);
-@@ -521,7 +609,7 @@
+@@ -539,10 +672,9 @@
          }
      }
- 
--    if ((strncmp(cwd, dwd, strlen(dwd))) != 0) {
-+    if (!userdir && (strncmp(cwd, dwd, strlen(dwd))) != 0) {
-         log_err("command not in docroot (%s/%s)\n", cwd, cmd);
-         exit(114);
+     else {
+-        if (((chdir(AP_DOC_ROOT)) != 0) ||
+-            ((getcwd(dwd, AP_MAXPATH)) == NULL) ||
++        if (((getcwd(dwd, AP_MAXPATH)) == NULL) ||
+             ((chdir(cwd)) != 0)) {
+-            log_err("cannot get docroot information (%s)\n", AP_DOC_ROOT);
++            log_err("cannot get docroot information (%s)\n", cwd);
+             exit(113);
+         }
      }
-@@ -537,7 +625,8 @@
-     /*
-      * Error out if cwd is writable by others.
-      */
--    if ((dir_info.st_mode & S_IWOTH) || (dir_info.st_mode & S_IWGRP)) {
-+    if (((dir_info.st_gid != gid) && (dir_info.st_mode & S_IWGRP))
-+        || (dir_info.st_mode & S_IWOTH)) {
-         log_err("directory is writable by others: (%s)\n", cwd);
-         exit(116);
-     }
-@@ -570,15 +659,15 @@
-      * Error out if the target name/group is different from
-      * the name/group of the cwd or the program.
-      */
--    if ((uid != dir_info.st_uid) ||
--        (gid != dir_info.st_gid) ||
--        (uid != prg_info.st_uid) ||
--        (gid != prg_info.st_gid)) {
--        log_err("target uid/gid (%lu/%lu) mismatch "
--                "with directory (%lu/%lu) or program (%lu/%lu)\n",
--                (unsigned long)uid, (unsigned long)gid,
-+    if ((gid != dir_info.st_gid) ||
-+        (dir_info.st_gid != prg_info.st_gid) ||
-+        ((uid != prg_info.st_uid) &&
-+        (dir_info.st_uid != prg_info.st_uid))) {
-+        log_err("program (%ld/%ld) mismatch "
-+                "with directory (%lu/%lu) or account (%ld)\n",
-+                (unsigned long)prg_info.st_uid, (unsigned long)prg_info.st_gid,
-                 (unsigned long)dir_info.st_uid, (unsigned long)dir_info.st_gid,
--                (unsigned long)prg_info.st_uid, (unsigned long)prg_info.st_gid);
-+                (unsigned long)gid);
-         exit(120);
-     }
-     /*
-@@ -602,29 +691,7 @@
+@@ -628,35 +760,7 @@
      umask(AP_SUEXEC_UMASK);
  #endif /* AP_SUEXEC_UMASK */
  
 -    /* Be sure to close the log file so the CGI can't mess with it. */
+-#ifdef AP_LOG_SYSLOG
+-    if (log_open) {
+-        closelog();
+-        log_open = 0;
+-    }
+-#else
 -    if (log != NULL) {
 -#if APR_HAVE_FCNTL_H
 -        /*
@@ -295,8 +259,8 @@ diff -Nur httpd-2.4.29-orig/support/suexec.c httpd-2.4.29/support/suexec.c
 -        log = NULL;
 -#endif
 -    }
--
+-#endif
 +    log_close();
+ 
      /*
       * Execute the command, replacing our image with its own.
-      */
