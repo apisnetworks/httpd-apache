@@ -15,7 +15,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.34
-Release: 1%{?dist}
+Release: 2%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -557,6 +557,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Tue Jul 31 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.34-20180731.apnscp
+- Passenger/cgroup overlap directive
+
 * Mon Jul 16 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.34-1.apnscp
 - svg deflate support
 - Update Apache
