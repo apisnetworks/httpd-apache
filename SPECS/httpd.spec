@@ -37,11 +37,13 @@ Group: System Environment/Daemons
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildRequires: autoconf, perl, pkgconfig, findutils
 BuildRequires: zlib-devel, libselinux-devel, libuuid-devel
+BuildRequires: brotli-devel >= 1.0.5
 BuildRequires: apr-devel >= 1.4.0, apr-util-devel >= 1.4.0, pcre-devel >= 5.0, libnghttp2
 BuildRequires: systemd-devel
 Requires: /etc/mime.types
 Requires: /usr/bin/x86_64-redhat-linux-gcc
 Requires: util-linux
+Requires: brotli >= 1.0.5
 Obsoletes: httpd-suexec
 Conflicts: httpd < 2.4.30
 Requires(pre): /usr/sbin/useradd
@@ -180,7 +182,7 @@ export LDFLAGS="-Wl,-z,relro,-z,now"
         --with-pcre \
         --enable-mods-shared=all --disable-distcache --disable-lua \
         --enable-ssl --with-ssl --enable-bucketeer \
-        --enable-case-filter --enable-case-filter-in \
+        --enable-case-filter --enable-case-filter-in --enable-brotli \
         --disable-imagemap --enable-nonportable-atomics=yes $*
 # Non-portables should be fine as all apnscp distributions run on x86-64
 
@@ -399,6 +401,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/modules/mod_authz_owner.so
 %{_libdir}/httpd/modules/mod_authz_user.so
 %{_libdir}/httpd/modules/mod_autoindex.so
+%{_libdir}/httpd/modules/mod_brotli.so
 %{_libdir}/httpd/modules/mod_bucketeer.so
 %{_libdir}/httpd/modules/mod_buffer.so
 %{_libdir}/httpd/modules/mod_cache_disk.so
@@ -567,7 +570,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
-* Thu Aug 02 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.34-20180802.apnscp
+* Tue Aug 14 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.34-20180814.apnscp
+- Add brotli support
+- CACHE_BOTH enables both cache backends
 - Passenger/cgroup overlap directive
 - Validate phpX_module presence 
 
