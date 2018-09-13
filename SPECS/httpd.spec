@@ -570,7 +570,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
-* Tue Aug 14 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.34-20180814.apnscp
+* Thu Sep 13 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.34-20180913.apnscp
+- Compress application/json
 - Add brotli support
 - CACHE_BOTH enables both cache backends
 - Passenger/cgroup overlap directive
