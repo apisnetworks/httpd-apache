@@ -14,8 +14,8 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.34
-Release: 2%{?dist}
+Version: 2.4.35
+Release: 1%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -570,6 +570,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Tue Sep 25 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.35-1.apnscp
+- Version upgrade
+
 * Thu Sep 13 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.34-20180913.apnscp
 - Compress application/json
 - Add brotli support
