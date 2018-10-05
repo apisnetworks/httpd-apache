@@ -570,6 +570,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Wed Oct 03 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.35-20181003.apnscp
+- Acquire lock on init
+
 * Tue Sep 25 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.35-1.apnscp
 - Version upgrade
 

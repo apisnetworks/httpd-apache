@@ -61,7 +61,6 @@ ulimit -n $MAX_FILES -m $MAX_MEMORY -t $MAX_CPUTIME -f $MAX_FILESIZE -v $MAX_VIR
 build_config() {
 	RUNLEVEL=($(runlevel)) 
 	[[ ${RUNLEVEL[1]} -eq 6 ]] && return
-	_makeLock
 	get_personalities | while read -a line ; do
 		SERVICE=${line[0]}
 		PORT=${line[1]}
@@ -158,7 +157,7 @@ clean_semaphores() {
 # things -- attempting to start while running is a failure, and shutdown
 # when not running is also a failure.  So we just do it the way init scripts
 # are expected to behave here.
-start() {
+start() {	
 	echo 500 >> /proc/self/oom_score_adj
 	change_fcgi
 	echo -n $"Starting $prog: "
@@ -295,53 +294,49 @@ is_reboot() {
 	return $?
 }
 
+_makeLock || (echo "Config locked" && exit 255)
 # See how we were called.
 case "$1" in
-  	start)
-		start
-		;;
-  	stop)
-		stop
-		;;
-  	status)
-		status $httpd
-		RETVAL=$?
-		;;
-  	restartfast|restart-fast)
-		stop
-		start
-		;;
-  	graceful)
-		reload
-		;;
-  	restart)
-		build_config
-		stop
-		start
-		;;
-  	condrestart)
-		if [ -f /etc/httpd/run/httpd.pid ] ; then
+		start)	
+			start
+			;;
+		stop)
+			stop
+			;;
+		status)
+			status $httpd
+			RETVAL=$?
+			;;
+		restartfast|restart-fast)			  			
 			stop
 			start
-		fi
-		;;
-  	buildconfig)
-		build_config
-		;;
-  	reload|reload-grc)
-		build_config
-		reload
-		;;
-	reload-fast|reloadfast)
-		reload
-		;;
-  	help|configtest|fullstatus)
-		$apachectl $@
-		RETVAL=$?
-		;;
-	*)
-		echo $"Usage: $prog {start|stop|restart|condrestart|reload|status|fullstatus|graceful|help|configtest|restart-fast|buildconfig}"
-		exit 1
+			;;
+		graceful)
+			reload
+			;;
+		restart)		
+			stop
+			start
+			;;
+		condrestart)
+			if [ -f /etc/httpd/run/httpd.pid ] ; then
+				stop
+				start
+			fi
+			;;
+		buildconfig)
+			build_config
+			;;
+		reload|reload-grc|reload-fast|reloadfast)
+			reload
+			;;	
+		help|configtest|fullstatus)
+			$apachectl $@
+			RETVAL=$?
+			;;
+		*)
+			echo $"Usage: $prog {start|stop|restart|condrestart|reload|status|fullstatus|graceful|help|configtest|restart-fast|buildconfig}"
+			exit 1
 esac
 
 exit $RETVAL
