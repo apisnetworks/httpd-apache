@@ -14,7 +14,7 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.37
+Version: 2.4.38
 Release: 1%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
@@ -570,6 +570,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Tue Jan 22 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.38-1.apnscp
+- Version bump
+
 * Wed Oct 24 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.37-1.apnscp
 - Version bump
 
