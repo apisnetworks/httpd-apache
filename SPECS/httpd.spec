@@ -15,7 +15,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.38
-Release: 1%{?dist}
+Release: 2%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -92,7 +92,7 @@ Group: System Environment/Daemons
 Summary: Tools for use with the Apache HTTP Server
 
 %description tools
-The httpd-tools package contains tools which can be used with 
+The httpd-tools package contains tools which can be used with
 the Apache HTTP Server.
 
 %package -n mod_authnz_ldap
@@ -221,9 +221,9 @@ echo %{mmn} > $RPM_BUILD_ROOT%{_includedir}/httpd/.mmn
 touch $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf/http10
 
 # tmpfiles.d configuration
-mkdir -p $RPM_BUILD_ROOT%{_prefix}/lib/tmpfiles.d 
+mkdir -p $RPM_BUILD_ROOT%{_prefix}/lib/tmpfiles.d
 install -m 644 -p $RPM_SOURCE_DIR/httpd.tmpfiles \
-   $RPM_BUILD_ROOT%{_prefix}/lib/tmpfiles.d/httpd.conf  
+   $RPM_BUILD_ROOT%{_prefix}/lib/tmpfiles.d/httpd.conf
 
 # Set up /var directories
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/httpd
@@ -242,7 +242,7 @@ install -m644 $RPM_SOURCE_DIR/httpd.logrotate \
 
 # Remove unpackaged files
 rm -rf $RPM_BUILD_ROOT%{_libdir}/httpd/modules/*.exp \
-       $RPM_BUILD_ROOT%{contentdir}/cgi-bin/* 
+       $RPM_BUILD_ROOT%{contentdir}/cgi-bin/*
 
 # Make suexec a+rw so it can be stripped.  %%files lists real permissions
 chmod 755 $RPM_BUILD_ROOT%{_sbindir}/suexec
@@ -277,11 +277,11 @@ if [[ -f %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave ]] ; then
     %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave | sed -n -i -e \
     '/^\s*#\s*MODULE_MARKER\s*/r /dev/stdin' -e p \
     %{_sysconfdir}/httpd/conf/httpd.conf
-  # Validate php_module is present 
+  # Validate php_module is present
   grep -q 'php[[:digit:]]_module' /etc/httpd/conf/httpd.conf
   if test $? -ne 0; then
     LINE=$(grep 'php[[:digit:]]_module' -m1 /etc/httpd/conf/httpd.conf.rpmsave)
-    if [[ "$LINE" != "" ]] ; then    
+    if [[ "$LINE" != "" ]] ; then
       awk '/^#\s*MODULE_MARKER/{print; print "'"$LINE"'";next}1' \
         /etc/httpd/conf/httpd.conf > %{_sysconfdir}/httpd/conf/httpd.$$ && \
         mv %{_sysconfdir}/httpd/conf/httpd.$$ %{_sysconfdir}/httpd/conf/httpd.conf
@@ -317,8 +317,8 @@ test -f /etc/sysconfig/httpd-disable-posttrans || \
 umask 077
 
 ln -fs %{sslcert} %{_sysconfdir}/httpd/conf/server.pem
-if [ -f %{sslcert} ] ; then 
-  exit 0 
+if [ -f %{sslcert} ] ; then
+  exit 0
 fi
 
 cat << EOF | %{_bindir}/openssl req -rand /proc/apm:/proc/cpuinfo:/proc/dma:/proc/filesystems:/proc/interrupts:/proc/ioports:/proc/pci:/proc/rtc:/proc/uptime -nodes \
@@ -570,6 +570,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Tue Feb 19 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.38-2.apnscp
+- Disable posix_getpwnam, +INCLUDES
+- DAV optional
+
 * Tue Jan 22 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.38-1.apnscp
 - Version bump
 
@@ -587,7 +591,7 @@ rm -rf $RPM_BUILD_ROOT
 - Add brotli support
 - CACHE_BOTH enables both cache backends
 - Passenger/cgroup overlap directive
-- Validate phpX_module presence 
+- Validate phpX_module presence
 
 * Mon Jul 16 2018 Matt Saladna <matt@apisnetworks.com> - 2.4.34-1.apnscp
 - svg deflate support
