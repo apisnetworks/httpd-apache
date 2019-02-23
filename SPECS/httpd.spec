@@ -15,7 +15,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.38
-Release: 2.1%{?dist}
+Release: 2.3%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -570,7 +570,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
-* Fri Feb 22 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.38-2.apnscp
+* Fri Feb 22 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.38-3.apnscp
 - Disable posix_getpwnam, +INCLUDES
 - DAV optional
 
