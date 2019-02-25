@@ -33,15 +33,20 @@ shopt -s nullglob
 if [ -f /etc/sysconfig/httpd ]; then
 	. /etc/sysconfig/httpd
 fi
+
+export LD_PRELOAD="" HOSTNAME
+declare -a PREDIRECTIVES
+
 OPTIONS=${OPTIONS:-""}
-export LD_PRELOAD=""
+if test -n "$PREDIRECTIVES" ; then
+	printf -v PREDIRECTIVES -- '-C "%s" ' "${PREDIRECTIVES[@]//\"/"\\\""}"
+fi
 
 # This will prevent initlog from swallowing up a pass-phrase prompt if
 # mod_ssl needs a pass-phrase from the user.
 INITLOG_ARGS=""
 
 # Path to the apachectl script, server binary, and short-form for messages.
-ulimit -c unlimited
 apachectl=/usr/sbin/httpd
 httpd=${HTTPD-/usr/sbin/httpd}
 prog=httpd
@@ -54,12 +59,11 @@ MAX_FILESIZE=${MAX_FILESIZE-4194304}
 MAX_VIRTMEMORY=${MAX_VIRTMEMORY-unlimited}
 MAX_DATASEG=${MAX_DATASEG-unlimited}
 MAX_CORESIZE=${MAX_CORESIZE-0} ; # disabled
-export HOSTNAME
 
-ulimit -n $MAX_FILES -m $MAX_MEMORY -t $MAX_CPUTIME -f $MAX_FILESIZE -v $MAX_VIRTMEMORY -d $MAX_DATASEG -c $MAX_CORESIZE -r 0
+ulimit -n "$MAX_FILES" -m "$MAX_MEMORY" -t "$MAX_CPUTIME" -f "$MAX_FILESIZE" -v "$MAX_VIRTMEMORY" -d "$MAX_DATASEG" -c "$MAX_CORESIZE" -r 0
 
 build_config() {
-	RUNLEVEL=($(runlevel)) 
+	RUNLEVEL=($(runlevel))
 	[[ ${RUNLEVEL[1]} -eq 6 ]] && return
 	get_personalities | while read -a line ; do
 		SERVICE=${line[0]}
@@ -92,37 +96,37 @@ collapse_config () {
 	BUILD_FILE=/etc/httpd/conf/virtual-${PREFIX}-built
 	# Lockfile used to prevent premature loading
 	[[ -f $BUILD_FILE ]] && mv $BUILD_FILE ${BUILD_FILE}.save
-	# Generate the main Web server configuration 
+	# Generate the main Web server configuration
 	DIR="virtual-${PREFIX/httpd/}"
 	if [[ $PORT == 80 ]] ; then
 		for config_file in /etc/httpd/conf/${DIR%-}/* ; do
 			# PR0001: overlayfs fails to stat presence of server.crt,
 			# substitute out /fst/ with /shadow/ to ensure proper stat()
 			( sed -e 's!^[[:space:]][[:space:]]*!!g' | awk '
-				BEGIN { 
-				ssl=system("[ -f /home/virtual/'${config_file##*/}'/fst/etc/httpd/conf/ssl.crt/server.crt ]") 
-			} 
-			{ 
-			if ($0 ~ /^[[:space:]]*Include[[:space:]]/) { 
+				BEGIN {
+				ssl=system("[ -f /home/virtual/'${config_file##*/}'/fst/etc/httpd/conf/ssl.crt/server.crt ]")
+			}
+			{
+			if ($0 ~ /^[[:space:]]*Include[[:space:]]/) {
 				system("shopt -s nullglob ; for i in "$2"/* ; do cat $i | sed -e s\"}/fst/}/shadow/}\" ; echo "" ; done")
-			} else if ($0 ~ /SSL[a-zA-Z]/ && ssl != 0) { 
-				if ($0 ~/KeyFile/) { 
-					print "SSLEngine On"; 
-					print "SSLCertificateFile /etc/httpd/conf/ssl.crt/server.crt" ; 
-					print "SSLCertificateKeyFile /etc/httpd/conf/ssl.key/server.key" ; 
-				} 
+			} else if ($0 ~ /SSL[a-zA-Z]/ && ssl != 0) {
+				if ($0 ~/KeyFile/) {
+					print "SSLEngine On";
+					print "SSLCertificateFile /etc/httpd/conf/ssl.crt/server.crt" ;
+					print "SSLCertificateKeyFile /etc/httpd/conf/ssl.key/server.key" ;
+				}
 			} else {
 				($0 !~ /^DocumentRoot/) && gsub("/fst/","/shadow/");
 				print $0;
-		} 
-			}' )  < "$config_file" >> $BUILD_FILE 
+		}
+			}' )  < "$config_file" >> $BUILD_FILE
 		done
-	else 
+	else
 		for config_file in /etc/httpd/conf/${DIR%-}/* ; do
 			sed -e 's!^[[:space:]][[:space:]]*!!g' < "$config_file" | awk '{if ($0 ~ /^[[:space:]]*Include[[:space:]]/) { system("shopt -s nullglob ; for i in "$2"/* ; do cat $i ; echo "" ; done")} else { print $0 } }' >> $BUILD_FILE
 		done
 	fi
-	OUTPUT=$(httpd $OPTIONS -T -t 2>&1)
+	OUTPUT=$(httpd $PREDIRECTIVES $OPTIONS -T -t 2>&1)
 
 	if [ $? -eq 0 ] ; then
 		return
@@ -157,7 +161,7 @@ clean_semaphores() {
 # things -- attempting to start while running is a failure, and shutdown
 # when not running is also a failure.  So we just do it the way init scripts
 # are expected to behave here.
-start() {	
+start() {
 	echo 500 >> /proc/self/oom_score_adj
 	change_fcgi
 	echo -n $"Starting $prog: "
@@ -165,17 +169,17 @@ start() {
 		SERVICE=${line[0]}
 		PORT=${line[1]}
 		MYHTTPD=$httpd
-		MYOPTS="-T ${OPTIONS}"
+		MYOPTS="-T ${PREDIRECTIVES} ${OPTIONS}"
 		if [[ $PORT == 80 ]] ; then
 			HTTPD_CONF="httpd.conf"
-		else 
+		else
 			MYOPTS="${MYOPTS} -DSLAVE"
 			HTTPD_CONF="httpd-${SERVICE}.conf"
 			MYHTTPD="env PHPRC=/etc/$SERVICE ${MYHTTPD}"
 		fi
 
 		HTTPD_CONF="/etc/httpd/conf/${HTTPD_CONF}"
-		if [[ ! -f $HTTPD_CONF ]] ; then 
+		if [[ ! -f $HTTPD_CONF ]] ; then
 			echo_warning "httpd conf ${HTTPD_CONF##*/} missing"
 			continue
 		fi
@@ -196,7 +200,7 @@ start() {
 
 		done
 
-		echo 
+		echo
 	}
 
 stop() {
@@ -206,11 +210,11 @@ stop() {
 	get_personalities | while read -a line ; do
 		SERVICE=${line[0]}
 		PORT=${line[1]}
-		MYOPTS="-T ${OPTIONS}"
+		MYOPTS="-T ${PREDIRECTIVES} ${OPTIONS}"
 		if [[ $PORT == 80 ]] ; then
 			HTTPD_CONF="httpd.conf"
 			PIDFILE="/etc/httpd/run/httpd.pid"
-		else 
+		else
 			MYOPTS="${MYOPTS} -DSLAVE"
 			HTTPD_CONF="httpd-${SERVICE}.conf"
 			MYHTTPD="env PHPRC=/etc/$SERVICE"
@@ -227,7 +231,7 @@ stop() {
 		# wait 30 seconds... 120 x's
 		[ $RETVAL = 0 ] && rm -f $PIDFILE && ( [[ $PORT == 80 ]] &&
 			rm -f /var/lock/subsys/httpd || true )
-			
+
 		done
 
 		str="x"
@@ -239,7 +243,7 @@ stop() {
 			usleep 250000
 			str=${str}x
 		done
-	echo_success 
+	echo_success
 	echo
 	clean_semaphores
 }
@@ -262,13 +266,13 @@ reload() {
 	get_personalities | while read -a line ; do
 		SERVICE=${line[0]}
 		PORT=${line[1]}
-		MYOPTS="-T ${OPTIONS}"
+		MYOPTS="-T ${PREDIRECTIVES} ${OPTIONS}"
 
 		if [[ $PORT == 80 ]] ; then
 			HTTPD_CONF="httpd.conf"
 			PIDFILE="/etc/httpd/run/httpd.pid"
 
-		else 
+		else
 			MYOPTS="${MYOPTS} -DSLAVE"
 			HTTPD_CONF="httpd-${SERVICE}.conf"
 			MYHTTPD="env PHPRC=/etc/$SERVICE"
@@ -288,7 +292,7 @@ reload() {
 }
 
 is_reboot() {
-	RUNLEVEL=($(runlevel)) 
+	RUNLEVEL=($(runlevel))
 	# halt and #reboot, don't bother to rebuild
 	[[ ${RUNLEVEL[1]} == 0 ]]  || [[ ${RUNLEVEL[2]} == 6 ]]
 	return $?
@@ -297,7 +301,7 @@ is_reboot() {
 _makeLock || (echo "Config locked" && exit 255)
 # See how we were called.
 case "$1" in
-		start)	
+		start)
 			start
 			;;
 		stop)
@@ -307,14 +311,14 @@ case "$1" in
 			status $httpd
 			RETVAL=$?
 			;;
-		restartfast|restart-fast)			  			
+		restartfast|restart-fast)
 			stop
 			start
 			;;
 		graceful)
 			reload
 			;;
-		restart)		
+		restart)
 			stop
 			start
 			;;
@@ -329,9 +333,9 @@ case "$1" in
 			;;
 		reload|reload-grc|reload-fast|reloadfast)
 			reload
-			;;	
+			;;
 		help|configtest|fullstatus)
-			$apachectl $@
+			$apachectl "$@"
 			RETVAL=$?
 			;;
 		*)

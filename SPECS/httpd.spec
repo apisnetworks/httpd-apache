@@ -14,8 +14,8 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.38
-Release: 2.4%{?dist}
+Version: 2.4.39
+Release: 1%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -476,6 +476,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/modules/mod_slotmem_shm.so
 %{_libdir}/httpd/modules/mod_socache_dbm.so
 %{_libdir}/httpd/modules/mod_socache_memcache.so
+%{_libdir}/httpd/modules/mod_socache_redis.so
 %{_libdir}/httpd/modules/mod_socache_shmcb.so
 %{_libdir}/httpd/modules/mod_speling.so
 %{_libdir}/httpd/modules/mod_status.so
@@ -570,7 +571,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
-* Fri Feb 22 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.38-4.apnscp
+* Tue Apr 02 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.39-1.apnscp
+- Version bump
+- Fixes CVE-2019-0211: privilege escalation from modules' scripts
+
+* Mon Feb 25 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.38-5.apnscp
 - Disable posix_getpwnam, +INCLUDES
 - DAV optional
 
