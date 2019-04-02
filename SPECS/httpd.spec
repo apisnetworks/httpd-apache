@@ -573,7 +573,7 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Tue Apr 02 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.39-1.apnscp
 - Version bump
-- Fixes CVE-2019-0211: privilege escalation from modules' scripts
+- CVE-2019-0211: privilege escalation from modules' scripts
 
 * Mon Feb 25 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.38-5.apnscp
 - Disable posix_getpwnam, +INCLUDES
