@@ -14,7 +14,8 @@
 # To pass additional options (for instance, -D definitions) to the
 # httpd binary at startup, set OPTIONS here.
 #
-#OPTIONS=
+# Brotli support enabled by default
+OPTIONS="-DBROTLI"
 
 # Set directives prior to httpd.conf parsing. Separate from OPTIONS
 # to keep scope usage simple. To remove override restrictions:
