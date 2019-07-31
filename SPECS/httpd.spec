@@ -15,7 +15,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.39
-Release: 3%{?dist}
+Release: 4%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -571,6 +571,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Wed Jul 31 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.39-4.apnscp
+- Set ServerName
+- Filter conf.d/ inclusion
+
 * Wed May 08 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.39-3.apnscp
 - Enable Brotli
 
