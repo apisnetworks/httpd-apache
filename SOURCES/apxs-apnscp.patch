@@ -1,0 +1,25 @@
+diff -Nwur httpd-2.4.39-orig/support/apxs.in httpd-2.4.39/support/apxs.in
+--- httpd-2.4.39-orig/support/apxs.in	2019-08-01 14:00:32.871458458 -0400
++++ httpd-2.4.39/support/apxs.in	2019-08-01 16:28:14.933564850 -0400
+@@ -588,7 +588,11 @@
+                 # check for open <containers>, so that the new LoadModule
+                 # directive always appears *outside* of an <container>.
+ 
+-                my $before = ($content =~ m|^(.*\n)#?\s*LoadModule\s+[^\n]+\n|s)[0];
++                my $before = ($content =~ m|^(.*\n)#\s*MODULE_MARKER\s*[^\n]*\n|s)[0];
++                if (!$before) {
++                    error("Configuration marker MODULE_MARKER missing from $CFG_SYSCONFDIR/$CFG_TARGET.conf - exiting");
++                    exit(1);
++                }
+ 
+                 # the '()=' trick forces list context and the scalar
+                 # assignment counts the number of list members (aka number
+@@ -598,7 +602,7 @@
+ 
+                 if ($cntopen == $cntclose) {
+                     # fine. Last LoadModule is contextless.
+-                    $content =~ s|^(.*\n#?\s*LoadModule\s+[^\n]+\n)|$1$c$lmd\n|s;
++                    $content =~ s|^(.*\n#\s*\bMODULE_MARKER\b)[^\n]*\n|$1\n$c$lmd\n|s;
+                 }
+                 elsif ($cntopen < $cntclose) {
+                     error('Configuration file is not valid. There are sections'

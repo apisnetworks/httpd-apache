@@ -15,7 +15,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.39
-Release: 4%{?dist}
+Release: 5%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -32,6 +32,7 @@ Source10: httpd-custom.conf
 
 Patch0: suexec-apnscp.patch
 Patch1: httpd-apxs.patch
+Patch2: apxs-apnscp.patch
 License: Apache License, Version 2.0
 Group: System Environment/Daemons
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -137,6 +138,7 @@ Security (TLS) protocols.
 %setup -q
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
 sed -i 's/@RELEASE@/%{release}/' server/core.c
@@ -269,6 +271,20 @@ rm -rf \
 /usr/sbin/groupadd -g 48 -r apache 2> /dev/null || :
 /usr/sbin/useradd -c "Apache" -u 48 -g 48 \
   -s /sbin/nologin -r -d %{contentdir} apache 2> /dev/null || :
+# Emergency pull prior to 2.4.39-5 update
+# Copy old LoadModule config injected below MODULE_MARKER
+if [[ -f %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave ]] ; then
+  # Validate php_module is present
+  grep -E -q 'LoadModule\s+php[[:digit:]]_module' %{_sysconfdir}/httpd/conf/httpd.conf
+  if test $? -ne 0; then
+    LINE="$(grep -m1 -E 'LoadModule\s+php[[:digit:]]_module' %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave)"
+    if [[ "$LINE" != "" ]] ; then
+      awk '/^#\s*MODULE_MARKER/{print; print "'"$LINE"'";next}1' \
+        %{_sysconfdir}/httpd/conf/httpd.conf > %{_sysconfdir}/httpd/conf/httpd.$$ && \
+        mv %{_sysconfdir}/httpd/conf/httpd.$$ %{_sysconfdir}/httpd/conf/httpd.conf
+    fi
+  fi
+fi
 
 %post
 # Copy old LoadModule config injected below MODULE_MARKER
@@ -281,7 +297,7 @@ if [[ -f %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave ]] ; then
   # Validate php_module is present
   grep -E -q 'LoadModule\s+php[[:digit:]]_module' %{_sysconfdir}/httpd/conf/httpd.conf
   if test $? -ne 0; then
-    LINE="$(grep -E 'LoadModule\s+php[[:digit:]]_module' -m1 %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave)"
+    LINE="$(grep -m1 -E 'LoadModule\s+php[[:digit:]]_module' %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave)"
     if [[ "$LINE" != "" ]] ; then
       awk '/^#\s*MODULE_MARKER/{print; print "'"$LINE"'";next}1' \
         %{_sysconfdir}/httpd/conf/httpd.conf > %{_sysconfdir}/httpd/conf/httpd.$$ && \
@@ -572,6 +588,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Thu Aug 01 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.39-5.apnscp
+- Hotfix insensitive regex check on "libphp"
+- apxs LoadModule placement dependent on MODULE_MARKER
+
 * Wed Jul 31 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.39-4.apnscp
 - Set ServerName
 - Filter conf.d/ inclusion
