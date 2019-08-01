@@ -277,13 +277,14 @@ if [[ -f %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave ]] ; then
     %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave | sed -n -i -e \
     '/^\s*#\s*MODULE_MARKER\s*/r /dev/stdin' -e p \
     %{_sysconfdir}/httpd/conf/httpd.conf
+
   # Validate php_module is present
-  grep -q 'php[[:digit:]]_module' /etc/httpd/conf/httpd.conf
+  grep -E -q 'LoadModule\s+php[[:digit:]]_module' %{_sysconfdir}/httpd/conf/httpd.conf
   if test $? -ne 0; then
-    LINE=$(grep 'php[[:digit:]]_module' -m1 /etc/httpd/conf/httpd.conf.rpmsave)
+    LINE="$(grep -E 'LoadModule\s+php[[:digit:]]_module' -m1 %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave)"
     if [[ "$LINE" != "" ]] ; then
       awk '/^#\s*MODULE_MARKER/{print; print "'"$LINE"'";next}1' \
-        /etc/httpd/conf/httpd.conf > %{_sysconfdir}/httpd/conf/httpd.$$ && \
+        %{_sysconfdir}/httpd/conf/httpd.conf > %{_sysconfdir}/httpd/conf/httpd.$$ && \
         mv %{_sysconfdir}/httpd/conf/httpd.$$ %{_sysconfdir}/httpd/conf/httpd.conf
     fi
   fi
