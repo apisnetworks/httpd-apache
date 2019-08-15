@@ -14,8 +14,8 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.39
-Release: 5%{?dist}
+Version: 2.4.41
+Release: 1%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -271,20 +271,6 @@ rm -rf \
 /usr/sbin/groupadd -g 48 -r apache 2> /dev/null || :
 /usr/sbin/useradd -c "Apache" -u 48 -g 48 \
   -s /sbin/nologin -r -d %{contentdir} apache 2> /dev/null || :
-# Emergency pull prior to 2.4.39-5 update
-# Copy old LoadModule config injected below MODULE_MARKER
-if [[ -f %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave ]] ; then
-  # Validate php_module is present
-  grep -E -q 'LoadModule\s+php[[:digit:]]_module' %{_sysconfdir}/httpd/conf/httpd.conf
-  if test $? -ne 0; then
-    LINE="$(grep -m1 -E 'LoadModule\s+php[[:digit:]]_module' %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave)"
-    if [[ "$LINE" != "" ]] ; then
-      awk '/^#\s*MODULE_MARKER/{print; print "'"$LINE"'";next}1' \
-        %{_sysconfdir}/httpd/conf/httpd.conf > %{_sysconfdir}/httpd/conf/httpd.$$ && \
-        mv %{_sysconfdir}/httpd/conf/httpd.$$ %{_sysconfdir}/httpd/conf/httpd.conf
-    fi
-  fi
-fi
 
 %post
 # Copy old LoadModule config injected below MODULE_MARKER
