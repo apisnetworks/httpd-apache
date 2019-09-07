@@ -15,7 +15,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.41
-Release: 1%{?dist}
+Release: 2%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -574,6 +574,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Sat Sep 07 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.41-2.apnscp
+- Increase proxy timeout to 60 seconds
+
 * Thu Aug 01 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.39-5.apnscp
 - Hotfix insensitive regex check on "libphp"
 - apxs LoadModule placement dependent on MODULE_MARKER
