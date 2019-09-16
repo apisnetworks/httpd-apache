@@ -223,7 +223,7 @@ stop() {
 
 		HTTPD_CONF="/etc/httpd/conf/${HTTPD_CONF}"
 
-		$apachectl -f $HTTPD_CONF -k stop -T
+		$apachectl $MYOPTS -f $HTTPD_CONF -k stop -T
 
 		RETVAL=$?
 		# PR 26749
