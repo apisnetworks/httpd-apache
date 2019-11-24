@@ -33,6 +33,7 @@ LANG=C
 
 #
 # Optional ulimit overrides
+# Prefer overrides via /etc/systemd/system/httpd.service.d/
 #
 #MAX_FILES=
 #MAX_MEMORY=

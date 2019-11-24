@@ -22,7 +22,17 @@ PassEnvironment=HOSTNAME
 PrivateTmp=false
 OOMScoreAdjust=500
 Nice=-10
+
+# Used for resource monopolization containment.
+# Individually with PHP-FPM these values are unexpected to be reached
+# exception in runaway circumstances.
 LimitNOFILE=100000
+LimitCPU=1800
+LimitRSS=1000000
+LimitFSIZE=3194304
+LimitDATA=unlimited
+LimitAS=unlimited
+LimitCORE=0
 
 [Install]
 WantedBy=multi-user.target
