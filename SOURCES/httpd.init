@@ -118,7 +118,7 @@ collapse_config () {
 		done
 	fi
 
-	OUTPUT=$(httpd "$PREDIRECTIVES" "$OPTIONS" -T -t 2>&1)
+	OUTPUT=$(httpd $PREDIRECTIVES $OPTIONS -T -t 2>&1)
 	RETVAL=$?
 	if [ $RETVAL -eq 0 ] ; then
 		return
