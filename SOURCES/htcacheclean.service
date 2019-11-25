@@ -9,5 +9,5 @@ User=apache
 PermissionsStartOnly=true
 PIDFile=/run/httpd/htcacheclean/pid
 EnvironmentFile=/etc/sysconfig/htcacheclean
-ExecPreStart=/bin/sh -c '[[ -d /run/httpd/htcacheclean ]] || mkdir -p /run/httpd/htcacheclean && chown apache /run/httpd/htcacheclean && chmod 700 /run/httpd/htcacheclean'
+ExecStartPre=/bin/sh -c '[[ -d /run/httpd/htcacheclean ]] || mkdir -p /run/httpd/htcacheclean && chown apache /run/httpd/htcacheclean && chmod 700 /run/httpd/htcacheclean'
 ExecStart=/usr/sbin/htcacheclean -P /run/httpd/htcacheclean/pid -d $INTERVAL -p $CACHE_ROOT -l $LIMIT $OPTIONS
