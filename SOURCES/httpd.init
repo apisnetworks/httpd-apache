@@ -254,8 +254,8 @@ reload-with-build() {
 
 reload() {
 	echo -n $"Reloading $prog: "
-
-	if httpd -T -t > /dev/null 2>&1 ; then
+	MYOPTS="-T ${PREDIRECTIVES} ${OPTIONS}"        
+	if ! httpd -T -t > /dev/null ; then
 		echo "Bailing on bad config"
 		RETVAL=255
 		echo

@@ -15,7 +15,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.41
-Release: 5%{?dist}
+Release: 6%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -574,6 +574,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Wed Nov 27 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.41-6.apnscp
+- Export runtime settings to configtest
+
 * Mon Nov 25 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.41-5.apnscp
 - Handle killing rogue processes with general port binds
 - Migrate ulimits to systemd

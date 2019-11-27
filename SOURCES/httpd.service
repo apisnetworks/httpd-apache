@@ -30,8 +30,8 @@ LimitNOFILE=100000
 LimitCPU=1800
 LimitRSS=1000000
 LimitFSIZE=3194304
-LimitDATA=unlimited
-LimitAS=unlimited
+LimitDATA=infinity
+LimitAS=infinity
 LimitCORE=0
 
 [Install]
