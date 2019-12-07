@@ -5,6 +5,7 @@ After=network.target remote-fs.target nss-lookup.target populate-tmp.service vir
 [Service]
 User=root
 Type=forking
+NotifyAccess=main
 EnvironmentFile=/etc/sysconfig/httpd
 ExecStartPre=-/bin/sh -c 'test -d /run/httpd || /usr/bin/mkdir /run/httpd'
 PIDFile=/run/httpd.pid

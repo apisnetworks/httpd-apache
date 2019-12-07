@@ -15,7 +15,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.41
-Release: 6%{?dist}
+Release: 7%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -33,6 +33,8 @@ Source10: httpd-custom.conf
 Patch0: suexec-apnscp.patch
 Patch1: httpd-apxs.patch
 Patch2: apxs-apnscp.patch
+Patch3: httpd-2.4.33-systemd.patch
+Patch4: httpd-2.4.25-detect-systemd.patch
 License: Apache License, Version 2.0
 Group: System Environment/Daemons
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -139,6 +141,8 @@ Security (TLS) protocols.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1 
+%patch4 -p1
 
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
 sed -i 's/@RELEASE@/%{release}/' server/core.c
@@ -162,6 +166,10 @@ fi
 %build
 # forcibly prevent use of bundled apr, apr-util, pcre
 rm -rf srclib/{apr,apr-util,pcre}
+
+# regenerate configure scripts
+autoheader && autoconf || exit 1
+
 export LDFLAGS="-Wl,-z,relro,-z,now"
 
 %configure \
@@ -485,6 +493,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/modules/mod_status.so
 %{_libdir}/httpd/modules/mod_substitute.so
 %{_libdir}/httpd/modules/mod_suexec.so
+%{_libdir}/httpd/modules/mod_systemd.so
 %{_libdir}/httpd/modules/mod_unique_id.so
 %{_libdir}/httpd/modules/mod_unixd.so
 %{_libdir}/httpd/modules/mod_userdir.so
@@ -574,6 +583,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Fri Dec 06 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.41-7.apnscp
+- mod_systemd backport
+
 * Wed Nov 27 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.41-6.apnscp
 - Export runtime settings to configtest
 
