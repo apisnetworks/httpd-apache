@@ -252,14 +252,20 @@ reload-with-build() {
 	reload
 }
 
+test-config() {
+	MYOPTS="-T ${PREDIRECTIVES} ${OPTIONS}"
+	if ! httpd -T -t ${MYOPTS} > /dev/null ; then
+		return 255
+	fi
+	return
+}
+
 reload() {
 	echo -n $"Reloading $prog: "
-	MYOPTS="-T ${PREDIRECTIVES} ${OPTIONS}"        
-	if ! httpd -T -t > /dev/null ; then
+	if ! test-config; then
+		RETVAL=$?
 		echo "Bailing on bad config"
-		RETVAL=255
-		echo
-		return
+		exit $RETVAL
 	fi
 
 	get_personalities | while read -ra line ; do
@@ -300,6 +306,10 @@ is_reboot() {
 _makeLock || (echo "Config locked" && exit 255)
 # See how we were called.
 case "$1" in
+		test)
+			test-config
+			exit $?
+			;;
 		start)
 			start
 			;;
