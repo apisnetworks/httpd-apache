@@ -1,0 +1,21 @@
+diff -Nur httpd-2.4.41-orig/server/core.c httpd-2.4.41/server/core.c
+--- httpd-2.4.41-orig/server/core.c	2020-02-16 13:40:52.983533794 -0500
++++ httpd-2.4.41/server/core.c	2020-02-16 13:42:25.609289453 -0500
+@@ -1718,7 +1718,7 @@
+             opt = OPT_INCLUDES;
+         }
+         else if (!strcasecmp(w, "FollowSymLinks")) {
+-            opt = OPT_SYM_LINKS;
++            opt = OPT_SYM_OWNER;
+         }
+         else if (!strcasecmp(w, "SymLinksIfOwnerMatch")) {
+             opt = OPT_SYM_OWNER;
+@@ -1964,7 +1964,7 @@
+             opt = OPT_INCLUDES;
+         }
+         else if (!strcasecmp(w, "FollowSymLinks")) {
+-            opt = OPT_SYM_LINKS;
++            opt = OPT_SYM_OWNER;
+         }
+         else if (!strcasecmp(w, "SymLinksIfOwnerMatch")) {
+             opt = OPT_SYM_OWNER;

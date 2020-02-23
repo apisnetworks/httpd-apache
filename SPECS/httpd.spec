@@ -15,7 +15,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.41
-Release: 7%{?dist}
+Release: 8%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -35,6 +35,7 @@ Patch1: httpd-apxs.patch
 Patch2: apxs-apnscp.patch
 Patch3: httpd-2.4.33-systemd.patch
 Patch4: httpd-2.4.25-detect-systemd.patch
+Patch5: httpd-2.4-force-symlinks-owner.patch
 License: Apache License, Version 2.0
 Group: System Environment/Daemons
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -143,6 +144,7 @@ Security (TLS) protocols.
 %patch2 -p1
 %patch3 -p1 
 %patch4 -p1
+%patch5 -p1
 
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
 sed -i 's/@RELEASE@/%{release}/' server/core.c
@@ -583,6 +585,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Sun Feb 16 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.41-8.apnscp
+- FollowSymLinks treated as SymLinksIfOwnerMatch
+
 * Fri Dec 06 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.41-7.apnscp
 - mod_systemd backport
 
