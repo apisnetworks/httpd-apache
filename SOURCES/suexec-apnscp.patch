@@ -185,7 +185,7 @@
 +        actual_uname = strdup(pw->pw_name);
 +        target_homedir = strdup(pw->pw_dir);
 +        if (NULL == (gr = getgrgid(gid))) {
-+            log_err("crit: GID invalid in sie root: (%d)\n", gid);
++            log_err("crit: GID invalid in site root: (%d)\n", gid);
 +            exit(106);
 +        }
 +        actual_gname = strdup(gr->gr_name);
