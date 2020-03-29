@@ -15,7 +15,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.41
-Release: 8%{?dist}
+Release: 9%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -36,6 +36,7 @@ Patch2: apxs-apnscp.patch
 Patch3: httpd-2.4.33-systemd.patch
 Patch4: httpd-2.4.25-detect-systemd.patch
 Patch5: httpd-2.4-force-symlinks-owner.patch
+Patch6: httpd-docroot-vpath.patch
 License: Apache License, Version 2.0
 Group: System Environment/Daemons
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -145,6 +146,7 @@ Security (TLS) protocols.
 %patch3 -p1 
 %patch4 -p1
 %patch5 -p1
+%patch6 -p1
 
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
 sed -i 's/@RELEASE@/%{release}/' server/core.c
@@ -189,7 +191,7 @@ export LDFLAGS="-Wl,-z,relro,-z,now"
 	--with-suexec-docroot=%{contentdir} \
 	--with-suexec-logfile=%{_localstatedir}/log/httpd/suexec.log \
 	--with-suexec-bin=%{_sbindir}/suexec \
-	--with-suexec-uidmin=500 --with-suexec-gidmin=500 \
+	--with-suexec-uidmin=1000 --with-suexec-gidmin=1000 \
         --enable-pie \
         --with-pcre \
         --enable-mods-shared=all --disable-distcache --disable-lua \
@@ -585,6 +587,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Tue Mar 31 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.41-9.apnscp
+- mod_rewrite implicit path translation
+- Remove TLSv1.0/1.1
+- Directive conversion, FollowSymLinks => SymLinksIfOwnerMatch
+- Bump suexec user requirements to RHEL7
+
 * Sun Feb 16 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.41-8.apnscp
 - FollowSymLinks treated as SymLinksIfOwnerMatch
 

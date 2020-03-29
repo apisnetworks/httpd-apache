@@ -1,0 +1,17 @@
+diff --git b/httpd-apache-orig/BUILD/httpd-2.4.41/modules/mappers/mod_rewrite.c a/BUILD/httpd-2.4.41/./modules/mappers/mod_rewrite.
+index 68a33b6..1cda5e3 100644
+--- orig/modules/mappers/mod_rewrite.c
++++ new/modules/mappers/mod_rewrite.c
+@@ -2160,7 +2160,12 @@ static char *lookup_variable(char *var, rewrite_ctx *ctx)
+ 
+         case 13:
+             if (!strcmp(var, "DOCUMENT_ROOT")) {
+-                result = ap_document_root(r);
++                // prefer VPATH
++                result = apr_table_get(r->subprocess_env, "VPATH");
++
++                if (!result) {
++                    result = ap_document_root(r);
++                }
+             }
+             break;
