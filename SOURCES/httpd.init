@@ -91,6 +91,7 @@ collapse_config () {
 	DIR="virtual-${PREFIX/httpd/}"
 	if [[ $PORT == 80 ]] ; then
 		for config_file in /etc/httpd/conf/"${DIR%-}"/* ; do
+			[[ -L $config_file ]] && continue
 			# PR0001: overlayfs fails to stat presence of server.crt,
 			# substitute out /fst/ with /shadow/ to ensure proper stat()
 			( sed -e 's!^[[:space:]][[:space:]]*!!g' | awk '
