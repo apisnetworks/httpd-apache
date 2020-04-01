@@ -14,8 +14,8 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.41
-Release: 9%{?dist}
+Version: 2.4.43
+Release: 1%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -33,10 +33,8 @@ Source10: httpd-custom.conf
 Patch0: suexec-apnscp.patch
 Patch1: httpd-apxs.patch
 Patch2: apxs-apnscp.patch
-Patch3: httpd-2.4.33-systemd.patch
-Patch4: httpd-2.4.25-detect-systemd.patch
-Patch5: httpd-2.4-force-symlinks-owner.patch
-Patch6: httpd-docroot-vpath.patch
+Patch3: httpd-2.4-force-symlinks-owner.patch
+Patch4: httpd-docroot-vpath.patch
 License: Apache License, Version 2.0
 Group: System Environment/Daemons
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -145,8 +143,6 @@ Security (TLS) protocols.
 %patch2 -p1
 %patch3 -p1 
 %patch4 -p1
-%patch5 -p1
-%patch6 -p1
 
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
 sed -i 's/@RELEASE@/%{release}/' server/core.c
@@ -195,7 +191,7 @@ export LDFLAGS="-Wl,-z,relro,-z,now"
         --enable-pie \
         --with-pcre \
         --enable-mods-shared=all --disable-distcache --disable-lua \
-        --enable-ssl --with-ssl --enable-bucketeer \
+        --enable-ssl --with-ssl --enable-bucketeer --enable-systemd \
         --enable-case-filter --enable-case-filter-in --enable-brotli \
         --disable-imagemap --enable-nonportable-atomics=yes $*
 # Non-portables should be fine as all apnscp distributions run on x86-64
@@ -587,6 +583,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Wed Apr 01 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.43-1.apnscp
+- Version bump
+- Account reprioritization
+
 * Tue Mar 31 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.41-9.apnscp
 - mod_rewrite implicit path translation
 - Remove TLSv1.0/1.1

@@ -104,8 +104,8 @@ collapse_config () {
 			} else if ($0 ~ /SSL[a-zA-Z]/ && ssl != 0) {
 				if ($0 ~/KeyFile/) {
 					print "SSLEngine On";
-					print "SSLCertificateFile /etc/httpd/conf/ssl.crt/server.crt" ;
-					print "SSLCertificateKeyFile /etc/httpd/conf/ssl.key/server.key" ;
+					print "SSLCertificateFile /etc/httpd/conf/server.pem" ;
+					print "SSLCertificateKeyFile /etc/httpd/conf/server.pem" ;
 				}
 			} else {
 				($0 !~ /^DocumentRoot|SCRIPT_FILENAME/) && gsub("/fst/","/shadow/");
