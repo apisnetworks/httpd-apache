@@ -96,21 +96,28 @@ collapse_config () {
 			# substitute out /fst/ with /shadow/ to ensure proper stat()
 			( sed -e 's!^[[:space:]][[:space:]]*!!g' | awk '
 				BEGIN {
-				ssl=system("[ -f /home/virtual/'"${config_file##*/}"'/fst/etc/httpd/conf/ssl.crt/server.crt ]")
-			}
-			{
-			if ($0 ~ /^[[:space:]]*Include[[:space:]]/) {
-				system("shopt -s nullglob ; for i in "$2"/* ; do cat $i | sed -e s\"}/fst/}/shadow/}\" ; echo "" ; done")
-			} else if ($0 ~ /SSL[a-zA-Z]/ && ssl != 0) {
-				if ($0 ~/KeyFile/) {
-					print "SSLEngine On";
-					print "SSLCertificateFile /etc/httpd/conf/server.pem" ;
-					print "SSLCertificateKeyFile /etc/httpd/conf/server.pem" ;
+					ssl=-1
 				}
-			} else {
-				($0 !~ /^DocumentRoot|SCRIPT_FILENAME/) && gsub("/fst/","/shadow/");
-				print $0;
-		}
+				{
+					if ($0 ~ /^[[:space:]]*Include[[:space:]]/) {
+						system("shopt -s nullglob ; for i in "$2"/* ; do cat $i | sed -e s\"}/fst/}/shadow/}\" ; echo "" ; done")
+					} else if ($0 ~ /SSL[a-zA-Z]/) {
+						if (ssl == -1 && substr($2, 1, 1) == "/") {
+							# delay check to get true path
+							ssl=system("[ -f "$2" ]")
+						}
+						if (ssl == 1) {
+							if ($0 ~/KeyFile/) {
+								print "SSLCertificateFile /etc/httpd/conf/server.pem" ;
+								print "SSLCertificateKeyFile /etc/httpd/conf/server.pem" ;
+							}
+						} else {
+							print $0
+						}
+					} else {
+						($0 !~ /^DocumentRoot|SCRIPT_FILENAME/) && gsub("/fst/","/shadow/");
+						print $0;
+					}
 			}' )  < "$config_file" >> "$BUILD_FILE"
 		done
 	else
