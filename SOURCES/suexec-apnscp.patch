@@ -166,7 +166,7 @@
 +        if (!strncmp("/home", cwd, 5)) {
 +            char *user;
 +            char *p = strstr(cwd + 1, "/");
-+            int len = p - cwd - 2;
++            int len = p - cwd - 1;
 +            user = strndup(cwd+6, len);
 +            pw  = getpwnam(user);
 +            log_err("test: %s\n", user);
