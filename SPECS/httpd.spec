@@ -2,7 +2,11 @@
 %define docroot /var/www
 %define suexec_caller apache
 %define mmn 20120211
+%if 0%{?rhel} < 8
 %define oldmmnisa %{mmn}-%{__isa_name}-%{__isa_bits}
+%else
+%define oldmmnisa %{mmn}-%{__isa_name}
+%endif
 %define mmnisa %{mmn}%{__isa_name}%{__isa_bits}
 %define vstring apnscp
 
@@ -332,8 +336,8 @@ if [ -f %{sslcert} ] ; then
   exit 0
 fi
 
-cat << EOF | %{_bindir}/openssl req -rand /proc/apm:/proc/cpuinfo:/proc/dma:/proc/filesystems:/proc/interrupts:/proc/ioports:/proc/pci:/proc/rtc:/proc/uptime -nodes \
-  -newkey rsa:1024 -keyout %{sslcert} -x509 -days 365 -out %{sslcert} 2>/dev/null
+cat << EOF | %{_bindir}/openssl req -rand /proc/cpuinfo:/proc/dma:/proc/filesystems:/proc/interrupts:/proc/ioports:/proc/uptime -nodes \
+  -newkey rsa:2048 -keyout %{sslcert} -x509 -days 365 -out %{sslcert} 2>/dev/null
 --
 SomeState
 SomeCity
