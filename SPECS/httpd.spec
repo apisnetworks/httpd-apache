@@ -19,7 +19,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.43
-Release: 1%{?dist}
+Release: 2%{?dist}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -587,6 +587,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Mon Jun 08 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.43-2.apnscp
+- Flexible SSL compatibility
+- !PHP_INSTALLED case covered per-virtualhost
+- Improve SSL detection routine
+
 * Wed Apr 01 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.43-1.apnscp
 - Version bump
 - Account reprioritization
