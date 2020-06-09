@@ -2,6 +2,7 @@
 %define docroot /var/www
 %define suexec_caller apache
 %define mmn 20120211
+%define epoch 2
 %if 0%{?rhel} < 8
 %define oldmmnisa %{mmn}-%{__isa_name}-%{__isa_bits}
 %else
@@ -20,6 +21,7 @@ Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.43
 Release: 3%{?dist}
+Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
 Source0: http://www.apache.org/dist/httpd/httpd-%{version}.tar.bz2
@@ -60,7 +62,7 @@ Provides: httpd-mmn = %{mmn}, httpd-mmn = %{mmnisa}, httpd-mmn = %{oldmmnisa}
 Requires(preun): systemd-units
 Requires(postun): systemd-units
 Requires(post): systemd-units
-Requires: httpd-tools = %{version}-%{release}
+Requires: httpd-tools = %{epoch}:%{version}-%{release}
 
 %description
 Apache is a powerful, full-featured, efficient, and freely-available
@@ -70,9 +72,10 @@ Internet.
 %package devel
 Group: Development/Libraries
 Summary: Development tools for the Apache HTTP server.
+Epoch: %{epoch}
 Obsoletes: secureweb-devel, apache-devel
 Requires: apr-devel, apr-util-devel, pkgconfig, libtool
-Requires: httpd = %{version}-%{release}
+Requires: httpd = %{epoch}:%{version}-%{release}
 
 %description devel
 The httpd-devel package contains the APXS binary and other files
@@ -86,7 +89,8 @@ to install this package.
 %package manual
 Group: Documentation
 Summary: Documentation for the Apache HTTP server.
-Requires: httpd = :%{version}-%{release}
+Epoch: %{epoch}
+Requires: httpd = %{epoch}:%{version}-%{release}
 Obsoletes: secureweb-manual, apache-manual
 
 %description manual
@@ -97,6 +101,7 @@ also be found at http://httpd.apache.org/docs/.
 %package tools
 Group: System Environment/Daemons
 Summary: Tools for use with the Apache HTTP Server
+Epoch: %{epoch}
 
 %description tools
 The httpd-tools package contains tools which can be used with
@@ -105,8 +110,9 @@ the Apache HTTP Server.
 %package -n mod_authnz_ldap
 Group: System Environment/Daemons
 Summary: LDAP modules for the Apache HTTP server
+Epoch: %{epoch}
 BuildRequires: openldap-devel
-Requires: httpd = %{version}-%{release}, httpd-mmn = %{mmn}, apr-util-ldap
+Requires: httpd = %{epoch}:%{version}-%{release}, httpd-mmn = %{mmn}, apr-util-ldap
 
 %description -n mod_authnz_ldap
 The mod_authnz_ldap module for the Apache HTTP server provides
@@ -116,9 +122,9 @@ mod_ldap provides an LDAP cache.
 %package -n mod_proxy_html
 Group: System Environment/Daemons
 Summary: Proxy HTML filter modules for the Apache HTTP server
-Epoch: 1
+Epoch: %{epoch}
 BuildRequires: libxml2-devel
-Requires: httpd = 0:%{version}-%{release}, httpd-mmn = %{mmn}
+Requires: httpd = %{epoch}:%{version}-%{release}, httpd-mmn = %{mmn}
 
 %description -n mod_proxy_html
 The mod_proxy_html module for the Apache HTTP server provides
@@ -129,11 +135,11 @@ enhanced charset/internationalisation support for mod_proxy_html.
 %package -n mod_ssl
 Group: System Environment/Daemons
 Summary: SSL/TLS module for the Apache HTTP server
-Epoch: 1
+Epoch: %{epoch}
 BuildRequires: openssl-devel
 Requires(post): openssl, /bin/cat
 Requires(pre): httpd
-Requires: httpd = 0:%{version}-%{release}, httpd-mmn = %{mmn}
+Requires: httpd = %{epoch}:%{version}-%{release}, httpd-mmn = %{mmn}
 
 %description -n mod_ssl
 The mod_ssl module provides strong cryptography for the Apache Web
@@ -305,12 +311,12 @@ if [[ -f %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave ]] ; then
 fi
 
 %systemd_post httpd.service htcacheclean.service
-httxt2dbm -i %{_sysconfdir}/httpd/conf/http10 -o %{_sysconfdir}/httpd/conf/http10
+httxt2dbm -f SDBM -i %{_sysconfdir}/httpd/conf/http10 -o %{_sysconfdir}/httpd/conf/http10
 
 ! compgen -G "%{_sysconfdir}/httpd/conf/domains/*" && for path in /home/virtual/site* ; do
   SITE=${SITE##*/}
   [[ -f $path/info/domain_map ]] || continue
-  httxt2dbm -i $path/info/domain_map -o %{_sysconfdir}/httpd/conf/domains/${SITE}
+  httxt2dbm -f SDBM -i $path/info/domain_map -o %{_sysconfdir}/httpd/conf/domains/${SITE}
 done
 
 [[ -f %{_sysconfdir}/httpd/conf/virtual-httpd-built ]] || \
