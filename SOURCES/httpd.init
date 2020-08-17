@@ -196,7 +196,7 @@ start() {
 					else
 						IP="@${IP}"
 					fi
-					/usr/sbin/lsof -t -u apache -a -i "$IP" | xargs kill -9 2> /dev/null
+					lsof -t -u apache -a -i "$IP" | xargs kill -9 2> /dev/null
 				done
 
 				daemon "$MYHTTPD" $MYOPTS -f "$HTTPD_CONF"
