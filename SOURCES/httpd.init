@@ -100,7 +100,7 @@ collapse_config () {
 				}
 				{
 					if ($0 ~ /^[[:space:]]*Include[[:space:]]/) {
-						system("shopt -s nullglob ; for i in "$2"/* ; do cat $i | sed -e s\"}/fst/}/shadow/}\" ; echo "" ; done")
+						system("shopt -s nullglob ; for i in "$2"/* ; do cat $i | ([[ \"$i\" != *.raw ]] && sed -e s\"}/fst/}/shadow/}\" || cat -) ; echo "" ; done")
 					} else if ($0 ~ /SSL[a-zA-Z]/) {
 						if (ssl == -1 && substr($2, 1, 1) == "/") {
 							# delay check to get true path
