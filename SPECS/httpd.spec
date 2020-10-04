@@ -20,7 +20,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.46
-Release: 1%{?dist}
+Release: 2%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
@@ -593,6 +593,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Sun Oct 04 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.46-2.apnscp
+- .raw profiles
+
 * Fri Aug 07 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.46-1.apnscp
 - Errata update
 
