@@ -20,7 +20,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.46
-Release: 3%{?dist}
+Release: 4%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
@@ -59,6 +59,7 @@ Requires(pre): /usr/sbin/useradd
 Provides: webserver
 Provides: mod_dav = %{version}-%{release}, httpd-suexec = %{version}-%{release}
 Provides: httpd-mmn = %{mmn}, httpd-mmn = %{mmnisa}, httpd-mmn = %{oldmmnisa}
+Provides: httpd-filesystem
 Requires(preun): systemd-units
 Requires(postun): systemd-units
 Requires(post): systemd-units
@@ -593,6 +594,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Tue Dec 29 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.46-4.apnscp
+- Provide httpd-filesystem dependency
+
 * Mon Dec 07 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.46-3.apnscp
 - TLSv1.3
 - PHP8 ISAPI compatibility
