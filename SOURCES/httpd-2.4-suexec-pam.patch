@@ -1,0 +1,82 @@
+diff -Nur httpd-2.4.46-orig/support/Makefile.in httpd-2.4.46/support/Makefile.in
+--- httpd-2.4.46-orig/support/Makefile.in	2018-02-09 11:17:30.000000000 +0100
++++ httpd-2.4.46/support/Makefile.in	2021-04-30 00:51:02.086077393 +0100
+@@ -73,6 +73,8 @@
+	$(LINK) $(checkgid_LTFLAGS) $(checkgid_OBJECTS) $(PROGRAM_LDADD)
+
+ suexec_OBJECTS = suexec.lo
++suexec: CFLAGS += -DSUEXEC_PAM_SESSION
++suexec: LDFLAGS += -lpam
+ suexec: $(suexec_OBJECTS)
+	$(LINK) $(suexec_OBJECTS)
+
+diff -Nur httpd-2.4.46-orig/support/suexec.c httpd-2.4.46/support/suexec.c
+--- httpd-2.4.46-orig/support/suexec.c	2021-04-30 00:49:30.390938693 +0100
++++ httpd-2.4.46/support/suexec.c	2021-04-30 04:25:13.898307694 +0100
+@@ -62,6 +62,25 @@
+ #include <syslog.h>
+ #endif
+
++/**
++ * Adapted from http://www.opennet.ru/base/patch/suexec_pam.txt.html
++ */
++#ifdef SUEXEC_PAM_SESSION
++#include <security/pam_appl.h>
++#define PAM_SERVICE_NAME "cgroup"
++#define PAM_CALL(call, name, err_code, do_end) \
++    do { \
++		rc = (call); \
++		if (rc != PAM_SUCCESS) { \
++	    	log_err("error: %s(): [%d] %s\n", (name), rc, pam_strerror(pamh, rc)); \
++	    	if (do_end) { \
++	    		pam_end(pamh, rc); \
++	    	} \
++	    	exit(err_code); \
++		} \
++	} while (0)
++#endif
++
+ #if defined(PATH_MAX)
+ #define AP_MAXPATH PATH_MAX
+ #elif defined(MAXPATHLEN)
+@@ -314,6 +333,29 @@
+     environ = cleanenv;
+ }
+
++static void bind_cgroup(const char *actual_uname)
++{
++	int rc;
++	pam_handle_t *pamh = NULL;
++	struct pam_conv pamc = { NULL, NULL };
++
++	PAM_CALL(pam_start(PAM_SERVICE_NAME, actual_uname, &pamc, &pamh),
++		"pam_start", 241, 0);
++
++	rc = pam_open_session(pamh, 0);
++	if (rc != PAM_SUCCESS) {
++		PAM_CALL(pam_end(pamh, 0), "pam_end", 244, 0);
++		log_err("error: opening session %s(): [%d] %s\n", PAM_SERVICE_NAME, rc, pam_strerror(pamh, rc));
++		return;
++	}
++
++	/*
++	* Activate PAM handler once jailed and before suid routine
++	*/
++	PAM_CALL(pam_close_session(pamh, 0), "pam_close_session", 243, 1);
++	PAM_CALL(pam_end(pamh, 0), "pam_end", 244, 0);
++}
++
+ int main(int argc, char *argv[])
+ {
+     int userdir = 0;        /* ~userdir flag             */
+@@ -628,6 +670,10 @@
+         exit(108);
+     }
+
++#ifdef SUEXEC_PAM_SESSION
++    bind_cgroup(actual_uname);
++#endif
++
+     /*
+      * Change UID/GID here so that the following tests work over NFS.
+      *
