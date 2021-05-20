@@ -347,6 +347,7 @@ fi
 
 cat << EOF | %{_bindir}/openssl req -rand /proc/cpuinfo:/proc/dma:/proc/filesystems:/proc/interrupts:/proc/ioports:/proc/uptime -nodes \
   -newkey rsa:2048 -keyout %{sslcert} -x509 -days 365 -out %{sslcert} 2>/dev/null
+FQDN="${FQDN:=$(hostname)}"
 --
 SomeState
 SomeCity
