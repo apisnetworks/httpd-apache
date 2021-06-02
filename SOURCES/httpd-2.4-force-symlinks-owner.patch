@@ -1,21 +1,21 @@
-diff -Nur httpd-2.4.41-orig/server/core.c httpd-2.4.41/server/core.c
---- httpd-2.4.41-orig/server/core.c	2020-02-16 13:40:52.983533794 -0500
-+++ httpd-2.4.41/server/core.c	2020-02-16 13:42:25.609289453 -0500
-@@ -1718,7 +1718,7 @@
+diff -Nur httpd-2.4.48-orig/server/core.c httpd-2.4.48/server/core.c
+--- httpd-2.4.48-orig/server/core.c	2021-05-12 11:14:42.000000000 +0100
++++ httpd-2.4.48/server/core.c	2021-06-02 17:38:25.539552064 +0100
+@@ -1754,7 +1754,7 @@
              opt = OPT_INCLUDES;
          }
-         else if (!strcasecmp(w, "FollowSymLinks")) {
+         else if (!ap_cstr_casecmp(w, "FollowSymLinks")) {
 -            opt = OPT_SYM_LINKS;
 +            opt = OPT_SYM_OWNER;
          }
-         else if (!strcasecmp(w, "SymLinksIfOwnerMatch")) {
+         else if (!ap_cstr_casecmp(w, "SymLinksIfOwnerMatch")) {
              opt = OPT_SYM_OWNER;
-@@ -1964,7 +1964,7 @@
+@@ -2003,7 +2003,7 @@
              opt = OPT_INCLUDES;
          }
-         else if (!strcasecmp(w, "FollowSymLinks")) {
+         else if (!ap_cstr_casecmp(w, "FollowSymLinks")) {
 -            opt = OPT_SYM_LINKS;
 +            opt = OPT_SYM_OWNER;
          }
-         else if (!strcasecmp(w, "SymLinksIfOwnerMatch")) {
+         else if (!ap_cstr_casecmp(w, "SymLinksIfOwnerMatch")) {
              opt = OPT_SYM_OWNER;
