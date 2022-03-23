@@ -19,8 +19,8 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.52
-Release: 2%{?dist}
+Version: 2.4.53
+Release: 1%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
@@ -42,7 +42,6 @@ Patch2: apxs-apnscp.patch
 Patch3: httpd-2.4-force-symlinks-owner.patch
 Patch4: httpd-docroot-vpath.patch
 Patch5: httpd-2.4-suexec-pam.patch
-Patch6: httpd-2.4.52-child-processes-fail-to-start.patch
 
 License: Apache License, Version 2.0
 Group: System Environment/Daemons
@@ -158,7 +157,6 @@ Security (TLS) protocols.
 %patch3 -p1 
 %patch4 -p1
 %patch5 -p1
-%patch6 -p3
 
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
 sed -i 's/@RELEASE@/%{release}/' server/core.c
