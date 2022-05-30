@@ -35,7 +35,6 @@ shopt -s nullglob
 if [ -f /etc/sysconfig/httpd ]; then
 	. /etc/sysconfig/httpd
 fi
-
 export LD_PRELOAD="" HOSTNAME
 declare -a PREDIRECTIVES
 
@@ -46,12 +45,11 @@ if test -n "$PREDIRECTIVES" ; then
 	printf -v PREDIRECTIVES -- '-C "%s" ' "${PREDIRECTIVES[@]//\"/"\\\""}"
 fi
 
-# Path to the apachectl script, server binary, and short-form for messages.
-apachectl=/usr/sbin/httpd
 httpd=${HTTPD-/usr/sbin/httpd}
 prog=httpd
 RETVAL=0
 LOCKFILE="/etc/httpd/conf/building"
+PIDFILE="/etc/httpd/run/httpd.pid"
 
 build_config() {
 	read -ra RUNLEVEL -d '' <<< "$(runlevel)"
@@ -157,7 +155,7 @@ clean_semaphores() {
 	done
 }
 
-# The semantics of these two functions differ from the way apachectl does
+# The semantics of these two functions differ from the way httpd does
 # things -- attempting to start while running is a failure, and shutdown
 # when not running is also a failure.  So we just do it the way init scripts
 # are expected to behave here.
@@ -201,6 +199,19 @@ start() {
 
 				daemon "$MYHTTPD" $MYOPTS -f "$HTTPD_CONF"
 				RETVAL=$?
+
+				if [[ $RETVAL -eq 0 ]]; then
+					str=""
+					while [[ ! -f "$PIDFILE" ]] && [[ $str != "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" ]] ; do
+						if [[ ! -d /proc/"$PID" ]] ; then
+							break
+						fi
+						# sleep .25 seconds
+						sleep 0.25
+						str=${str}x
+						done
+					systemd-notify --pid="$(cat $PIDFILE)"
+				fi
 			fi
 		fi
 
@@ -212,30 +223,30 @@ start() {
 
 stop() {
 	echo -n $"Stopping $prog: "
-	PID=$(cat /etc/httpd/run/httpd.pid)
 
 	get_personalities | while read -ra line ; do
 		SERVICE=${line[0]}
 		PORT=${line[1]}
-		MYOPTS="-T ${PREDIRECTIVES} ${OPTIONS}"
+		MYHTTPD=$httpd
+		MYOPTS="${OPTIONS}"
 		if [[ $PORT == 80 ]] ; then
 			HTTPD_CONF="httpd.conf"
-			PIDFILE="/etc/httpd/run/httpd.pid"
+			LOCALPID="$PIDFILE"
 		else
 			MYOPTS="${MYOPTS} -DSLAVE"
 			HTTPD_CONF="httpd-${SERVICE}.conf"
-			MYHTTPD="env PHPRC=/etc/$SERVICE"
-			PIDFILE="/etc/httpd/run/httpd-${SERVICE}.pid"
+			MYHTTPD="env PHPRC=/etc/$SERVICE $MYHTTPD"
+			LOCALPID="/etc/httpd/run/httpd-${SERVICE}.pid"
 		fi
-
+		PID="$(cat $PIDFILE)"
 		HTTPD_CONF="/etc/httpd/conf/${HTTPD_CONF}"
 
-		$apachectl $MYOPTS -f "$HTTPD_CONF" -k stop -T
+		$MYHTTPD $MYOPTS -f "$HTTPD_CONF" -k stop -T
 
 		RETVAL=$?
 		# PR 26749
 		if [[ $RETVAL -eq 0 ]]; then
-			rm -f "$PIDFILE"
+			rm -f "$LOCALPID"
 			[[ $PORT == 80 ]] && rm -f /var/lock/subsys/httpd
 		fi
 	done
@@ -246,7 +257,7 @@ stop() {
 			break
 		fi
 		# sleep .25 seconds
-		usleep 250000
+		sleep 0.25
 		str=${str}x
 	done
 
@@ -280,22 +291,19 @@ reload() {
 		SERVICE=${line[0]}
 		PORT=${line[1]}
 		MYOPTS="-T ${PREDIRECTIVES} ${OPTIONS}"
-
+		MYHTTPD=$httpd
 		if [[ $PORT == 80 ]] ; then
 			HTTPD_CONF="httpd.conf"
-			PIDFILE="/etc/httpd/run/httpd.pid"
-
 		else
 			MYOPTS="${MYOPTS} -DSLAVE"
 			HTTPD_CONF="httpd-${SERVICE}.conf"
-			MYHTTPD="env PHPRC=/etc/$SERVICE"
-			PIDFILE="/etc/httpd/run/httpd-${SERVICE}.pid"
+			MYHTTPD="env PHPRC=/etc/$SERVICE $MYHTTPD"
 		fi
 
 		HTTPD_CONF="/etc/httpd/conf/${HTTPD_CONF}"
 		MYOPTS="${MYOPTS}"
 
-		$apachectl -f "$HTTPD_CONF" $MYOPTS -k graceful
+		$HTTPD -f "$HTTPD_CONF" $MYOPTS -k graceful
 		RETVAL=$?
 		[[ $RETVAL != 0 ]] && echo_warning "${SERVICE}: graceful failed"
 	done
@@ -340,7 +348,7 @@ case "$1" in
 			start
 			;;
 		condrestart)
-			if [ -f /etc/httpd/run/httpd.pid ] ; then
+			if [ -f "$PIDFILE" ] ; then
 				stop
 				start
 			fi
@@ -352,7 +360,7 @@ case "$1" in
 			reload
 			;;
 		help|configtest|fullstatus)
-			$apachectl "$@"
+			$HTTPD "$@"
 			RETVAL=$?
 			;;
 		*)

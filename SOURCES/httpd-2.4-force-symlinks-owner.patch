@@ -1,21 +1,29 @@
-diff -Nur httpd-2.4.48-orig/server/core.c httpd-2.4.48/server/core.c
---- httpd-2.4.48-orig/server/core.c	2021-05-12 11:14:42.000000000 +0100
-+++ httpd-2.4.48/server/core.c	2021-06-02 17:38:25.539552064 +0100
-@@ -1754,7 +1754,7 @@
+diff -Nur httpd-2.4.53/server/core.c httpd-2.4.53-new/server/core.c
+--- httpd-2.4.53/server/core.c	2022-03-07 15:48:54.000000000 +0100
++++ httpd-2.4.53-new/server/core.c	2022-05-30 14:15:40.496901443 +0100
+@@ -1763,10 +1763,10 @@
+         else if (!ap_cstr_casecmp(w, "IncludesNOEXEC")) {
              opt = OPT_INCLUDES;
          }
-         else if (!ap_cstr_casecmp(w, "FollowSymLinks")) {
--            opt = OPT_SYM_LINKS;
-+            opt = OPT_SYM_OWNER;
+-        else if (!ap_cstr_casecmp(w, "FollowSymLinks")) {
++        else if (!ap_cstr_casecmp(w, "PrivilegedSymLinks")) {
+             opt = OPT_SYM_LINKS;
          }
-         else if (!ap_cstr_casecmp(w, "SymLinksIfOwnerMatch")) {
+-        else if (!ap_cstr_casecmp(w, "SymLinksIfOwnerMatch")) {
++        else if (!ap_cstr_casecmp(w, "SymLinksIfOwnerMatch") || !ap_cstr_casecmp(w, "FollowSymLinks")) {
              opt = OPT_SYM_OWNER;
-@@ -2003,7 +2003,7 @@
+         }
+         else if (!ap_cstr_casecmp(w, "ExecCGI")) {
+@@ -2012,10 +2012,10 @@
+         else if (!ap_cstr_casecmp(w, "IncludesNOEXEC")) {
              opt = OPT_INCLUDES;
          }
-         else if (!ap_cstr_casecmp(w, "FollowSymLinks")) {
--            opt = OPT_SYM_LINKS;
-+            opt = OPT_SYM_OWNER;
+-        else if (!ap_cstr_casecmp(w, "FollowSymLinks")) {
++        else if (!ap_cstr_casecmp(w, "PrivilegedSymLinks")) {
+             opt = OPT_SYM_LINKS;
          }
-         else if (!ap_cstr_casecmp(w, "SymLinksIfOwnerMatch")) {
+-        else if (!ap_cstr_casecmp(w, "SymLinksIfOwnerMatch")) {
++        else if (!ap_cstr_casecmp(w, "SymLinksIfOwnerMatch") || !ap_cstr_casecmp(w, "FollowSymLinks")) {
              opt = OPT_SYM_OWNER;
+         }
+         else if (!ap_cstr_casecmp(w, "ExecCGI")) {

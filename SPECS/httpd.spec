@@ -20,7 +20,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.53
-Release: 1%{?dist}
+Release: 2%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
@@ -227,6 +227,10 @@ install -p -m 644 $RPM_SOURCE_DIR/httpd-apnscp-rewrite-map.conf $RPM_BUILD_ROOT/
 install -p -m 644 $RPM_SOURCE_DIR/httpd.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
 install -p -m 644 $RPM_SOURCE_DIR/httpd-custom.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
 install -p -m 755 $RPM_SOURCE_DIR/httpd.init $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/user/
+
+%if 0%{?rhel} < 8
+sed -i -e '/\sTLSv1\.3/d' $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf/httpd.conf
+%endif
 
 # for holding mod_dav lock database
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/dav
@@ -598,6 +602,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Wed Jun 01 2022 Matt Saladna <matt@apisnetworks.com> - 2.4.53-2.apnscp
+- TLS_CHACHA20_POLY1305_SHA256 cipher support 
+- Reintroduce FollowSymLinks as PrivilegedSymlinks
+- Use /dev/random for startup entropy, urandom for connections
+
 * Thu Apr 29 2021 Matt Saladna <matt@apisnetworks.com> - 2.4.46-5.apnscp
 - Invalid parsing on two-letter domains
 - CGI cgroup binding
