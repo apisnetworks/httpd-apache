@@ -303,7 +303,7 @@ reload() {
 		HTTPD_CONF="/etc/httpd/conf/${HTTPD_CONF}"
 		MYOPTS="${MYOPTS}"
 
-		$HTTPD -f "$HTTPD_CONF" $MYOPTS -k graceful
+		$MYHTTPD -f "$HTTPD_CONF" $MYOPTS -k graceful
 		RETVAL=$?
 		[[ $RETVAL != 0 ]] && echo_warning "${SERVICE}: graceful failed"
 	done
@@ -360,7 +360,7 @@ case "$1" in
 			reload
 			;;
 		help|configtest|fullstatus)
-			$HTTPD "$@"
+			$httpd "$@"
 			RETVAL=$?
 			;;
 		*)
