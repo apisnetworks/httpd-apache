@@ -123,8 +123,8 @@ collapse_config () {
 			sed -e 's!^[[:space:]][[:space:]]*!!g' < "$config_file" | awk '{if ($0 ~ /^[[:space:]]*Include[[:space:]]/) { system("shopt -s nullglob ; for i in "$2"/* ; do cat $i ; echo "" ; done")} else { print $0 } }' >> "$BUILD_FILE"
 		done
 	fi
-
-	OUTPUT=$(httpd $PREDIRECTIVES $OPTIONS -T -t 2>&1)
+	# Nest to allow proper evaluation
+	OUTPUT=$(/bin/sh -c "httpd -t -T $PREDIRECTIVES $OPTIONS 2>&1")
 	RETVAL=$?
 	if [ $RETVAL -eq 0 ] ; then
 		return
