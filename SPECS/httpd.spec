@@ -334,7 +334,7 @@ done
 %systemd_preun httpd.service htcacheclean.service
 
 %postun
-%systemd_postun
+%systemd_postun httpd.service
 
 %posttrans
 test -f /etc/sysconfig/httpd-disable-posttrans || \
