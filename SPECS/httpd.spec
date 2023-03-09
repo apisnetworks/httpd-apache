@@ -3,6 +3,9 @@
 %define suexec_caller apache
 %define mmn 20120211
 %define epoch 2
+
+%bcond_with rustls 0
+
 %if 0%{?rhel} < 8
 %define oldmmnisa %{mmn}-%{__isa_name}-%{__isa_bits}
 %else
@@ -19,7 +22,7 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.55
+Version: 2.4.56
 Release: 1%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
@@ -66,7 +69,6 @@ Requires(preun): systemd-units
 Requires(postun): systemd-units
 Requires(post): systemd-units
 Requires: httpd-tools = %{epoch}:%{version}-%{release}
-
 %description
 Apache is a powerful, full-featured, efficient, and freely-available
 Web server. Apache is also the most popular Web server on the
@@ -154,7 +156,7 @@ Security (TLS) protocols.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
-%patch3 -p1 
+%patch3 -p1
 %patch4 -p1
 %patch5 -p1
 
@@ -187,27 +189,29 @@ autoheader && autoconf || exit 1
 export LDFLAGS="-Wl,-z,relro,-z,now"
 
 %configure \
-	--enable-layout=RPM \
-	--libdir=%{_libdir} \
-	--sysconfdir=%{_sysconfdir}/httpd/conf \
-	--includedir=%{_includedir}/httpd \
-	--libexecdir=%{_libdir}/httpd/modules \
-	--datadir=%{contentdir} \
-        --with-installbuilddir=%{_libdir}/httpd/build \
-        --enable-mpms-shared=all \
-        --with-apr=%{_prefix} --with-apr-util=%{_prefix} \
-	--enable-suexec --with-suexec \
-	--with-suexec-caller=%{suexec_caller} \
-	--with-suexec-docroot=%{contentdir} \
-	--with-suexec-logfile=%{_localstatedir}/log/httpd/suexec.log \
-	--with-suexec-bin=%{_sbindir}/suexec \
-	--with-suexec-uidmin=1000 --with-suexec-gidmin=1000 \
-        --enable-pie \
-        --with-pcre \
-        --enable-mods-shared=all --disable-distcache --disable-lua \
-        --enable-ssl --with-ssl --enable-bucketeer --enable-systemd \
-        --enable-case-filter --enable-case-filter-in --enable-brotli \
-        --disable-imagemap --enable-nonportable-atomics=yes $*
+  --enable-layout=RPM \
+  --libdir=%{_libdir} \
+  --sysconfdir=%{_sysconfdir}/httpd/conf \
+  --includedir=%{_includedir}/httpd \
+  --libexecdir=%{_libdir}/httpd/modules \
+  --datadir=%{contentdir} \
+  --with-installbuilddir=%{_libdir}/httpd/build \
+  --enable-mpms-shared=all \
+  --with-apr=%{_prefix} --with-apr-util=%{_prefix} \
+  --enable-suexec --with-suexec \
+  --with-suexec-caller=%{suexec_caller} \
+  --with-suexec-docroot=%{contentdir} \
+  --with-suexec-logfile=%{_localstatedir}/log/httpd/suexec.log \
+  --with-suexec-bin=%{_sbindir}/suexec \
+  --with-suexec-uidmin=1000 --with-suexec-gidmin=1000 \
+  --enable-pie \
+  --with-pcre \
+  %{?with_rustls:--with-rustls} \
+  %{!?with_rustls:--disable-tls} \
+  --enable-mods-shared=all --disable-distcache --disable-lua \
+  --enable-ssl --with-ssl --enable-bucketeer --enable-systemd \
+  --enable-case-filter --enable-case-filter-in --enable-brotli \
+  --disable-imagemap --enable-nonportable-atomics=yes $*
 # Non-portables should be fine as all apnscp distributions run on x86-64
 
 make %{?_smp_mflags}
@@ -513,6 +517,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/modules/mod_substitute.so
 %{_libdir}/httpd/modules/mod_suexec.so
 %{_libdir}/httpd/modules/mod_systemd.so
+%{?with_rustls:%{_libdir}/httpd/modules/mod_tls.so}
 %{_libdir}/httpd/modules/mod_unique_id.so
 %{_libdir}/httpd/modules/mod_unixd.so
 %{_libdir}/httpd/modules/mod_userdir.so
@@ -603,7 +608,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed Jun 01 2022 Matt Saladna <matt@apisnetworks.com> - 2.4.53-2.apnscp
-- TLS_CHACHA20_POLY1305_SHA256 cipher support 
+- TLS_CHACHA20_POLY1305_SHA256 cipher support
 - Reintroduce FollowSymLinks as PrivilegedSymlinks
 - Use /dev/random for startup entropy, urandom for connections
 
@@ -625,7 +630,7 @@ rm -rf $RPM_BUILD_ROOT
 - Errata update
 
 * Sun Jul 05 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.43-4.apnscp
-- TLSv1.3 enablement 
+- TLSv1.3 enablement
 
 * Mon Jun 08 2020 Matt Saladna <matt@apisnetworks.com> - 2.4.43-2.apnscp
 - Flexible SSL compatibility
@@ -656,7 +661,7 @@ rm -rf $RPM_BUILD_ROOT
 - Migrate ulimits to systemd
 
 * Sat Nov 23 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.41-3.apnscp
-- Populate htcacheclean PID directory prestart 
+- Populate htcacheclean PID directory prestart
 
 * Sat Sep 07 2019 Matt Saladna <matt@apisnetworks.com> - 2.4.41-2.apnscp
 - Increase proxy timeout to 60 seconds
