@@ -23,7 +23,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.56
-Release: 1%{?dist}
+Release: 2%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
@@ -398,7 +398,8 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/httpd/conf/mime.types
 %config(noreplace) %{_sysconfdir}/httpd/conf/http10
 
-%config(noreplace) %{_sysconfdir}/sysconfig/h*
+%config(noreplace) %{_sysconfdir}/sysconfig/httpd
+%config(noreplace) %{_sysconfdir}/sysconfig/htcacheclean
 %{_prefix}/lib/tmpfiles.d/httpd.conf
 
 %config %{_sysconfdir}/logrotate.d/httpd
