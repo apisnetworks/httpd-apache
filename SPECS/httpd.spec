@@ -23,7 +23,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.56
-Release: 2%{?dist}
+Release: 3%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
@@ -211,7 +211,8 @@ export LDFLAGS="-Wl,-z,relro,-z,now"
   --enable-mods-shared=all --disable-distcache --disable-lua \
   --enable-ssl --with-ssl --enable-bucketeer --enable-systemd \
   --enable-case-filter --enable-case-filter-in --enable-brotli \
-  --disable-imagemap --enable-nonportable-atomics=yes $*
+  --disable-imagemap  --enable-proxy-http2 \
+  --enable-nonportable-atomics=yes $*
 # Non-portables should be fine as all apnscp distributions run on x86-64
 
 make %{?_smp_mflags}
@@ -490,6 +491,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/modules/mod_proxy_fdpass.so
 %{_libdir}/httpd/modules/mod_proxy_ftp.so
 %{_libdir}/httpd/modules/mod_proxy_http.so
+%{_libdir}/httpd/modules/mod_proxy_http2.so
 %{_libdir}/httpd/modules/mod_proxy_scgi.so
 %{_libdir}/httpd/modules/mod_proxy_wstunnel.so
 %{_libdir}/httpd/modules/mod_proxy_uwsgi.so
