@@ -22,7 +22,7 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.57
+Version: 2.4.58
 Release: 1%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
