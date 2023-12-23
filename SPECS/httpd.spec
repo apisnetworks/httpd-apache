@@ -54,6 +54,9 @@ BuildRequires: zlib-devel, libselinux-devel, libuuid-devel
 BuildRequires: brotli-devel >= 1.0.5
 BuildRequires: apr-devel >= 1.4.0, apr-util-devel >= 1.4.0, pcre-devel >= 5.0, libnghttp2
 BuildRequires: systemd-devel
+%if %{?rhel} < 8
+BuildRequires: openssl11-devel
+%endif
 Requires: /etc/mime.types
 Requires: /usr/bin/x86_64-redhat-linux-gcc
 Requires: util-linux
@@ -186,7 +189,12 @@ rm -rf srclib/{apr,apr-util,pcre}
 # regenerate configure scripts
 autoheader && autoconf || exit 1
 
+%if %{?rhel} < 8
+export LDFLAGS="-Wl,-z,relro,-z,now `pkg-config --libs openssl11`"
+export CFLAGS="`pkg-config --cflags openssl11` ${CFLAGS}"
+%else
 export LDFLAGS="-Wl,-z,relro,-z,now"
+%endif
 
 %configure \
   --enable-layout=RPM \
@@ -209,7 +217,13 @@ export LDFLAGS="-Wl,-z,relro,-z,now"
   %{?with_rustls:--with-rustls} \
   %{!?with_rustls:--disable-tls} \
   --enable-mods-shared=all --disable-distcache --disable-lua \
-  --enable-ssl --with-ssl --enable-bucketeer --enable-systemd \
+  --enable-ssl \
+  %if %{?rhel} < 8
+  --with-ssl=/usr/include/openssl11/openssl \
+  %else
+  --with-ssl \
+  %endif
+  --enable-bucketeer --enable-systemd \
   --enable-case-filter --enable-case-filter-in --enable-brotli \
   --disable-imagemap  --enable-proxy-http2 \
   --enable-nonportable-atomics=yes $*
@@ -232,10 +246,6 @@ install -p -m 644 $RPM_SOURCE_DIR/httpd-apnscp-rewrite-map.conf $RPM_BUILD_ROOT/
 install -p -m 644 $RPM_SOURCE_DIR/httpd.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
 install -p -m 644 $RPM_SOURCE_DIR/httpd-custom.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
 install -p -m 755 $RPM_SOURCE_DIR/httpd.init $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/user/
-
-%if 0%{?rhel} < 8
-sed -i -e '/\sTLSv1\.3/d' $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf/httpd.conf
-%endif
 
 # for holding mod_dav lock database
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/lib/dav
