@@ -336,13 +336,6 @@ if [[ -f %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave ]] ; then
 fi
 
 %systemd_post httpd.service htcacheclean.service
-httxt2dbm -f SDBM -i %{_sysconfdir}/httpd/conf/http10 -o %{_sysconfdir}/httpd/conf/http10
-
-! compgen -G "%{_sysconfdir}/httpd/conf/domains/*" && for path in /home/virtual/site* ; do
-  SITE=${SITE##*/}
-  [[ -f $path/info/domain_map ]] || continue
-  httxt2dbm -f SDBM -i $path/info/domain_map -o %{_sysconfdir}/httpd/conf/domains/${SITE}
-done
 
 [[ -f %{_sysconfdir}/httpd/conf/virtual-httpd-built ]] || \
   env OPTIONS="-DNO_SSL" %{_sysconfdir}/systemd/user/httpd.init buildconfig
