@@ -1,0 +1,20 @@
+diff -Nur httpd-2.4.58-orig/server/util_expr_eval.c httpd-2.4.58/server/util_expr_eval.c
+--- httpd-2.4.58-orig/server/util_expr_eval.c	2023-07-17 16:33:05.000000000 -0400
++++ httpd-2.4.58/server/util_expr_eval.c	2023-12-29 20:36:37.778573905 -0500
+@@ -1352,6 +1352,7 @@
+     "REQUEST_STATUS",           /* 27 */
+     "REMOTE_ADDR",              /* 28 */
+     "REMOTE_PORT",              /* 29 */
++    "SERVER_ADDR",              /* 30 */
+     NULL
+ };
+ 
+@@ -1443,6 +1444,8 @@
+         return r->useragent_ip;
+     case 29:
+         return apr_psprintf(ctx->p, "%u", ctx->c->client_addr->port);
++    case 30:
++	return r->connection->local_ip;
+     default:
+         ap_assert(0);
+         return NULL;
