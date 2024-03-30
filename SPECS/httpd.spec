@@ -67,6 +67,7 @@ Conflicts: httpd < 2.4.30
 Requires(pre): /usr/sbin/useradd
 Provides: webserver
 Provides: mod_dav = %{version}-%{release}, httpd-suexec = %{version}-%{release}
+Provides: mod_http2 = %{epoch}:%{version}-%{release}
 Provides: httpd-mmn = %{mmn}, httpd-mmn = %{mmnisa}, httpd-mmn = %{oldmmnisa}
 Provides: httpd-filesystem
 Requires(preun): systemd-units
