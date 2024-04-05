@@ -23,7 +23,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.59
-Release: 1%{?dist}
+Release: 2%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
@@ -335,7 +335,8 @@ if [[ -f %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave ]] ; then
     fi
   fi
 fi
-[[ $1 == 1 ]] && httxt2dbm -f SDBM -i %{_sysconfdir}/httpd/conf/http10 -o %{_sysconfdir}/httpd/conf/http10
+
+httxt2dbm -f SDBM -i %{_sysconfdir}/httpd/conf/http10 -o %{_sysconfdir}/httpd/conf/http10
 %systemd_post httpd.service htcacheclean.service
 
 [[ -f %{_sysconfdir}/httpd/conf/virtual-httpd-built ]] || \
