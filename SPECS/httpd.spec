@@ -22,8 +22,8 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.60
-Release: 2%{?dist}
+Version: 2.4.61
+Release: 1%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
@@ -618,7 +618,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Wed Jul 03 2024 Matt Saladna <matt@apisnetworks.com> - 2.4.60-2.apnscp
-- Apply UnsafePrefixStat w/r/t CVE-2024-38475 
+- Apply UnsafePrefixStat w/r/t CVE-2024-38475
 
 * Wed Jun 01 2022 Matt Saladna <matt@apisnetworks.com> - 2.4.53-2.apnscp
 - TLS_CHACHA20_POLY1305_SHA256 cipher support
