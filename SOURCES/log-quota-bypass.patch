@@ -1,0 +1,42 @@
+--- httpd-2.4.62-orig/modules/loggers/mod_log_config.c	2022-02-24 15:43:21.000000000 -0500
++++ httpd-2.4.62/modules/loggers/mod_log_config.c	2024-08-05 12:44:58.694555496 -0400
+@@ -158,6 +158,7 @@
+ #include "ap_config.h"
+ #include "mod_log_config.h"
+ #include "httpd.h"
++#include "http_main.h"
+ #include "http_config.h"
+ #include "http_core.h"          /* For REMOTE_NAME */
+ #include "http_log.h"
+@@ -1653,6 +1654,11 @@
+             return NULL;
+         }
+         rv = apr_file_open(&fd, fname, xfer_flags, xfer_perms, p);
++        if (rv == ENOSPC) {
++            ap_log_error(APLOG_MARK, APLOG_WARNING, rv, ap_server_conf, APLOGNO(42069)
++                "path out of space, disabling logging on %s.", fname);
++            rv = apr_file_open(&fd, "/dev/null", xfer_flags, xfer_perms, p);
++        }
+         if (rv != APR_SUCCESS) {
+             ap_log_error(APLOG_MARK, APLOG_ERR, rv, s, APLOGNO(00649)
+                             "could not open transfer log file %s.", fname);
+--- httpd-2.4.62-orig/server/log.c	2024-06-21 10:31:54.000000000 -0400
++++ httpd-2.4.62/server/log.c	2024-08-05 12:20:26.098427464 -0400
+@@ -259,7 +259,7 @@
+     }
+     if ((rc = apr_file_open(&stderr_file, filename,
+                             APR_APPEND | APR_WRITE | APR_CREATE | APR_LARGEFILE,
+-                            APR_OS_DEFAULT, p)) != APR_SUCCESS) {
++                            APR_OS_DEFAULT, p)) != APR_SUCCESS && rc != ENOSPC && rc != EDQUOT) {
+         ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, ap_server_conf, APLOGNO(00086)
+                      "%s: could not open error log file %s.",
+                      ap_server_argv0, fname);
+@@ -458,7 +458,7 @@
+         }
+         if ((rc = apr_file_open(&s->error_log, fname,
+                                APR_APPEND | APR_WRITE | APR_CREATE | APR_LARGEFILE,
+-                               APR_OS_DEFAULT, p)) != APR_SUCCESS) {
++                               APR_OS_DEFAULT, p)) != APR_SUCCESS && rc != ENOSPC && rc != EDQUOT) {
+             ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, ap_server_conf, APLOGNO(00091)
+                          "%s: could not open error log file %s.",
+                          ap_server_argv0, fname);

@@ -22,7 +22,7 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.61
+Version: 2.4.62
 Release: 1%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
@@ -46,6 +46,7 @@ Patch3: httpd-2.4-force-symlinks-owner.patch
 Patch4: httpd-docroot-vpath.patch
 Patch5: httpd-2.4-suexec-pam.patch
 Patch6: httpd-2.4.58-server-addr-expr.patch
+Patch7: log-quota-bypass.patch
 
 License: Apache License, Version 2.0
 Group: System Environment/Daemons
@@ -165,6 +166,7 @@ Security (TLS) protocols.
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
+%patch7 -p1
 
 sed -i '/^#define PLATFORM/s/Unix/%{vstring}/' os/unix/os.h
 sed -i 's/@RELEASE@/%{release}/' server/core.c
