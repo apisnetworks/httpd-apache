@@ -23,7 +23,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.62
-Release: 1%{?dist}
+Release: 2%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
@@ -267,6 +267,8 @@ echo %{mmn} > $RPM_BUILD_ROOT%{_includedir}/httpd/.mmn
 
 # HTTP/1.0 whitelist
 touch $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf/http10
+# SSL rediretions
+touch $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf/ssl
 
 # tmpfiles.d configuration
 mkdir -p $RPM_BUILD_ROOT%{_prefix}/lib/tmpfiles.d
@@ -339,6 +341,8 @@ if [[ -f %{_sysconfdir}/httpd/conf/httpd.conf.rpmsave ]] ; then
 fi
 
 httxt2dbm -f SDBM -i %{_sysconfdir}/httpd/conf/http10 -o %{_sysconfdir}/httpd/conf/http10
+httxt2dbm -f SDBM -i %{_sysconfdir}/httpd/conf/ssl -o %{_sysconfdir}/httpd/conf/ssl
+
 %systemd_post httpd.service htcacheclean.service
 
 [[ -f %{_sysconfdir}/httpd/conf/virtual-httpd-built ]] || \
@@ -407,6 +411,7 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/httpd/conf/magic
 %config(noreplace) %{_sysconfdir}/httpd/conf/mime.types
 %config(noreplace) %{_sysconfdir}/httpd/conf/http10
+%config(noreplace) %{_sysconfdir}/httpd/conf/ssl
 
 %config(noreplace) %{_sysconfdir}/sysconfig/httpd
 %config(noreplace) %{_sysconfdir}/sysconfig/htcacheclean
@@ -619,6 +624,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/httpd/build/mkdir.sh
 
 %changelog
+* Mon Sep 30 2024 Matt Saladna <matt@apisnetworks.com> - 2.4.62-2.apnscp
+- Add implicit SSL redirection maps
+
 * Wed Jul 03 2024 Matt Saladna <matt@apisnetworks.com> - 2.4.60-2.apnscp
 - Apply UnsafePrefixStat w/r/t CVE-2024-38475
 
