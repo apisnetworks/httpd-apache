@@ -12,7 +12,7 @@
              return NULL;
          }
          rv = apr_file_open(&fd, fname, xfer_flags, xfer_perms, p);
-+        if (rv == ENOSPC) {
++        if (APR_STATUS_IS_ENOSPC(rv)) {
 +            ap_log_error(APLOG_MARK, APLOG_WARNING, rv, ap_server_conf, APLOGNO(42069)
 +                "path out of space, disabling logging on %s.", fname);
 +            rv = apr_file_open(&fd, "/dev/null", xfer_flags, xfer_perms, p);
@@ -27,7 +27,7 @@
      if ((rc = apr_file_open(&stderr_file, filename,
                              APR_APPEND | APR_WRITE | APR_CREATE | APR_LARGEFILE,
 -                            APR_OS_DEFAULT, p)) != APR_SUCCESS) {
-+                            APR_OS_DEFAULT, p)) != APR_SUCCESS && rc != ENOSPC && rc != EDQUOT) {
++                            APR_OS_DEFAULT, p)) != APR_SUCCESS && !APR_STATUS_IS_ENOSPC(rc)) {
          ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, ap_server_conf, APLOGNO(00086)
                       "%s: could not open error log file %s.",
                       ap_server_argv0, fname);
@@ -36,7 +36,7 @@
          if ((rc = apr_file_open(&s->error_log, fname,
                                 APR_APPEND | APR_WRITE | APR_CREATE | APR_LARGEFILE,
 -                               APR_OS_DEFAULT, p)) != APR_SUCCESS) {
-+                               APR_OS_DEFAULT, p)) != APR_SUCCESS && rc != ENOSPC && rc != EDQUOT) {
++                               APR_OS_DEFAULT, p)) != APR_SUCCESS && !APR_STATUS_IS_ENOSPC(rc)) {
              ap_log_error(APLOG_MARK, APLOG_STARTUP, rc, ap_server_conf, APLOGNO(00091)
                           "%s: could not open error log file %s.",
                           ap_server_argv0, fname);
