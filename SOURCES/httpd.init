@@ -28,6 +28,7 @@
 # Source function library.
 
 # shellcheck disable=SC2034
+DAEMON_COREFILE_LIMIT=unlimited
 SYSTEMCTL_SKIP_REDIRECT=1
 shopt -s nullglob
 . /etc/rc.d/init.d/functions
