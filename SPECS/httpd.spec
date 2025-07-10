@@ -22,8 +22,8 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.63
-Release: 1%{?dist}
+Version: 2.4.64
+Release: 2%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
