@@ -181,7 +181,7 @@ start() {
 			echo_warning "httpd conf ${HTTPD_CONF##*/} missing"
 			continue
 		fi
-		daemon "$MYHTTPD" $MYOPTS -f "$HTTPD_CONF"
+		"$MYHTTPD" $MYOPTS -f "$HTTPD_CONF"
 		RETVAL=$?
 		# Special case for main web server, we actually care about this
 		if [[ $PORT == 80 ]] ; then
@@ -198,7 +198,7 @@ start() {
 					lsof -t -u apache -a -i "$IP" | xargs kill -9 2> /dev/null
 				done
 
-				daemon "$MYHTTPD" $MYOPTS -f "$HTTPD_CONF"
+				"$MYHTTPD" $MYOPTS -f "$HTTPD_CONF"
 				RETVAL=$?
 
 				if [[ $RETVAL -eq 0 ]]; then
