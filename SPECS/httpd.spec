@@ -55,7 +55,12 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildRequires: autoconf, perl, pkgconfig, findutils
 BuildRequires: zlib-devel, libselinux-devel, libuuid-devel
 BuildRequires: brotli-devel >= 1.0.5
-BuildRequires: apr-devel >= 1.4.0, apr-util-devel >= 1.4.0, pcre-devel >= 5.0, libnghttp2
+%if %{?rhel} < 10
+BuildRequires: pcre-devel >= 5.0
+%else
+BuildRequires: pcre2-devel
+%endif
+BuildRequires: apr-devel >= 1.4.0, apr-util-devel >= 1.4.0, libnghttp2
 BuildRequires: systemd-devel
 %if %{?rhel} < 8
 BuildRequires: openssl11-devel
@@ -149,7 +154,7 @@ Group: System Environment/Daemons
 Summary: SSL/TLS module for the Apache HTTP server
 Epoch: %{epoch}
 BuildRequires: openssl-devel
-Requires(post): openssl, /bin/cat
+Requires(post): openssl
 Requires(pre): httpd
 Requires: httpd = %{epoch}:%{version}-%{release}, httpd-mmn = %{mmn}
 
