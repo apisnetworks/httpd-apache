@@ -31,11 +31,11 @@
 DAEMON_COREFILE_LIMIT=unlimited
 SYSTEMCTL_SKIP_REDIRECT=1
 shopt -s nullglob
-. /etc/rc.d/init.d/functions
 
 if [ -f /etc/sysconfig/httpd ]; then
 	. /etc/sysconfig/httpd
 fi
+
 export LD_PRELOAD="" HOSTNAME
 declare -a PREDIRECTIVES
 
@@ -148,6 +148,22 @@ change_fcgi() {
 	DIR=/etc/httpd/run/httpd/lock
 	[[ ! -d $DIR ]] && mkdir $DIR
 	chown apache $DIR
+}
+
+echo_success() {
+  echo -n "["
+  echo -n $"  OK  "
+  echo -n "]"
+  echo -ne "\r"
+  return 0
+}
+
+echo_warning() {
+    echo -n "["
+    echo -n $"WARNING"
+    echo -n "] "
+    echo -ne "\r\n$1"
+    return 1
 }
 
 clean_semaphores() {
