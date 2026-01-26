@@ -179,7 +179,8 @@ clean_semaphores() {
 start() {
 	change_fcgi
 	echo -n $"Starting $prog: "
-	get_personalities | while read -ra line ; do
+
+	get_personalities | ( while read -ra line ; do
 		SERVICE=${line[0]}
 		PORT=${line[1]}
 		MYHTTPD=$httpd
@@ -215,7 +216,7 @@ start() {
 				done
 
 				"$MYHTTPD" $MYOPTS -f "$HTTPD_CONF"
-				RETVAL=$?
+				RETVAL=$(($?&$RETVAL))
 
 				if [[ $RETVAL -eq 0 ]]; then
 					str=""
@@ -231,10 +232,10 @@ start() {
 				fi
 			fi
 		fi
-
-
 		done
-
+		return $RETVAL
+		)
+		RETVAL=$?
 		echo
 	}
 
