@@ -23,7 +23,7 @@
 Summary: Apache HTTP Server
 Name: httpd
 Version: 2.4.66
-Release: 2%{?dist}
+Release: 3%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
@@ -38,6 +38,7 @@ Source7: htcacheclean.sysconf
 Source8: httpd-apnscp-rewrite-map.conf
 Source9: httpd.tmpfiles
 Source10: httpd-custom.conf
+Source11: httpd-thin.conf
 
 Patch0: suexec-apnscp.patch
 Patch1: httpd-apxs.patch
@@ -256,6 +257,7 @@ done
 
 install -p -m 644 $RPM_SOURCE_DIR/httpd-apnscp-rewrite-map.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
 install -p -m 644 $RPM_SOURCE_DIR/httpd.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
+install -p -m 644 $RPM_SOURCE_DIR/httpd-thin.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
 install -p -m 644 $RPM_SOURCE_DIR/httpd-custom.conf $RPM_BUILD_ROOT/%{_sysconfdir}/httpd/conf
 install -p -m 755 $RPM_SOURCE_DIR/httpd.init $RPM_BUILD_ROOT/%{_sysconfdir}/systemd/user/
 
@@ -362,6 +364,8 @@ httxt2dbm -f SDBM -i %{_sysconfdir}/httpd/conf/ssl -o %{_sysconfdir}/httpd/conf/
 %systemd_postun httpd.service
 
 %posttrans
+# Changes to Notify= directive in 2.4.66-3
+systemctl daemon-reload
 test -f /etc/sysconfig/httpd-disable-posttrans || \
   /bin/systemctl try-restart httpd.service htcacheclean.service >/dev/null 2>&1 || :
 
@@ -413,6 +417,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_sysconfdir}/httpd/conf/virtual
 %config(noreplace) %{_sysconfdir}/httpd/conf/personalities/httpd
 %config %{_sysconfdir}/httpd/conf/httpd.conf
+%config %{_sysconfdir}/httpd/conf/httpd-thin.conf
 %config(noreplace) %{_sysconfdir}/httpd/conf/httpd-custom.conf
 %config %{_sysconfdir}/httpd/conf/httpd-apnscp-rewrite-map.conf
 %config(noreplace) %{_sysconfdir}/httpd/conf/magic

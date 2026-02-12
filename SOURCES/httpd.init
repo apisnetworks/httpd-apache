@@ -178,8 +178,12 @@ clean_semaphores() {
 # are expected to behave here.
 start() {
 	change_fcgi
-	echo -n $"Starting $prog: "
+	if [[ -n $NOTIFY_SOCKET ]]; then
+		_releaseLock
+		exec "$httpd" -T ${PREDIRECTIVES} ${OPTIONS} -f "/etc/httpd/conf/httpd.conf" -DFOREGROUND
+	fi
 
+	echo -n $"Starting $prog: "
 	get_personalities | ( while read -ra line ; do
 		SERVICE=${line[0]}
 		PORT=${line[1]}
@@ -228,7 +232,6 @@ start() {
 						sleep 0.25
 						str=${str}x
 						done
-					systemd-notify --pid="$(cat $PIDFILE)"
 				fi
 			fi
 		fi
@@ -240,7 +243,7 @@ start() {
 	}
 
 stop() {
-	echo -n $"Stopping $prog: "
+	[[ -z $NOTIFY_SOCKET ]] && echo -n $"Stopping $prog: "
 
 	get_personalities | while read -ra line ; do
 		SERVICE=${line[0]}
@@ -278,9 +281,10 @@ stop() {
 		sleep 0.25
 		str=${str}x
 	done
-
-	echo_success
-	echo
+	if [[ -z $NOTIFY_SOCKET ]]; then
+		echo_success
+		echo
+	fi
 	clean_semaphores
 }
 
