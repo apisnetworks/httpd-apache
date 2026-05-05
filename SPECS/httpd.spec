@@ -22,8 +22,8 @@
 
 Summary: Apache HTTP Server
 Name: httpd
-Version: 2.4.66
-Release: 3%{?dist}
+Version: 2.4.67
+Release: 1%{?dist}
 Epoch: %{epoch}
 URL: http://httpd.apache.org/
 Vendor: Apache Software Foundation
@@ -364,8 +364,10 @@ httxt2dbm -f SDBM -i %{_sysconfdir}/httpd/conf/ssl -o %{_sysconfdir}/httpd/conf/
 %systemd_postun httpd.service
 
 %posttrans
+rm -f /etc/systemd/system/httpd.init
 # Changes to Notify= directive in 2.4.66-3
 systemctl daemon-reload
+
 test -f /etc/sysconfig/httpd-disable-posttrans || \
   /bin/systemctl try-restart httpd.service htcacheclean.service >/dev/null 2>&1 || :
 
